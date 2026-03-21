@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 8% 10%, rgba(59, 130, 246, 0.2) 0%, transparent 36%),
+      radial-gradient(circle at 88% 16%, rgba(59, 130, 246, 0.12) 0%, transparent 34%);
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .schedule-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3e4c6b transparent;
+  }
+
+  .schedule-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .schedule-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #3e4c6b;
+    border-radius: 999px;
+  }
+
+  .schedule-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

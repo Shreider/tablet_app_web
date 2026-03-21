@@ -13,13 +13,13 @@ To jest **preview produktu**:
 ## Stos i architektura
 
 Projekt działa na Docker Compose i uruchamia 3 serwisy:
-1. `frontend` (React + Vite)
+1. `frontend` (React + Vite + Tailwind CSS)
 2. `backend` (Node.js + Express)
 3. `database` (PostgreSQL 16)
 
 ## Widok aplikacji (frontend)
 
-Interfejs jest zaprojektowany pod tablet w orientacji poziomej:
+Interfejs jest zaprojektowany pod tablet w orientacji poziomej i wykorzystuje ciemnoniebieski motyw:
 - **lewa sekcja (~80%)**: aktualnie trwające zajęcia,
 - **prawa sekcja (~20%)**: pionowa lista harmonogramu „co dalej”,
 - kliknięcie elementu listy otwiera **jeden reużywalny modal** ze szczegółami.
@@ -46,9 +46,12 @@ Dane pochodzą wyłącznie z mocków (`frontend/src/data/mockSchedule.ts`).
 │   │   ├── data
 │   │   ├── types
 │   │   ├── App.tsx
+│   │   ├── index.css
 │   │   ├── main.tsx
-│   │   └── styles.css
+│   │   └── vite-env.d.ts
 │   ├── index.html
+│   ├── postcss.config.cjs
+│   ├── tailwind.config.cjs
 │   ├── tsconfig.json
 │   └── vite.config.ts
 ├── docker-compose.yml
