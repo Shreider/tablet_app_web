@@ -8,7 +8,7 @@ interface HeaderBarProps {
 
 export function HeaderBar({ room, building, zone }: HeaderBarProps): JSX.Element {
   return (
-    <header className="flex flex-col gap-3 rounded-panel border border-border bg-surface/90 px-5 py-4 shadow-panel backdrop-blur-sm md:flex-row md:items-center md:justify-between">
+    <header className="flex flex-col gap-3 rounded-panel border border-border bg-surface/90 pl-5 pr-6 py-4 shadow-panel backdrop-blur-sm md:flex-row md:items-center md:justify-between">
       <div>
         <p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-muted">Panel sali</p>
         <h1 className="m-0 my-1 text-[clamp(1.35rem,2.1vw,1.9rem)] font-bold text-foreground">Sala {room}</h1>
