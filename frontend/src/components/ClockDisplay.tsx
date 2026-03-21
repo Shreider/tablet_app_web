@@ -29,9 +29,9 @@ export function ClockDisplay(): JSX.Element {
   }, []);
 
   return (
-    <div className="clock-display" aria-label="Aktualny czas i data">
-      <span className="clock-time">{formatTime(now)}</span>
-      <span className="clock-date">{formatDate(now)}</span>
+    <div className="flex flex-col gap-1 text-left md:text-right" aria-label="Aktualny czas i data">
+      <span className="text-[clamp(1.45rem,2.1vw,2rem)] font-bold text-foreground">{formatTime(now)}</span>
+      <span className="text-sm capitalize text-muted">{formatDate(now)}</span>
     </div>
   );
 }
