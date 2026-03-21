@@ -11,3 +11,5 @@ Kolejne kroki rozwoju:
 - dodanie migracji (np. Prisma/Knex/Flyway),
 - przygotowanie schematu zajęć, sal i prowadzących,
 - podpięcie backendu do rzeczywistych zapytań SQL.
+
+ELO
