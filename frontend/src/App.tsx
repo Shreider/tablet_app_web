@@ -13,7 +13,7 @@ export default function App(): JSX.Element {
   const currentLecture = mockSchedule.find((lecture) => lecture.isCurrent) ?? mockSchedule[0];
 
   return (
-    <div className="flex min-h-screen flex-col gap-5 p-4 sm:p-5 lg:p-[1.1rem]">
+    <div className="flex min-h-screen flex-col gap-5 p-4 sm:p-5 lg:h-screen lg:overflow-hidden lg:p-[1.1rem]">
       <HeaderBar room={roomMetadata.room} building={roomMetadata.building} zone={roomMetadata.zone} />
 
       <AppLayout
