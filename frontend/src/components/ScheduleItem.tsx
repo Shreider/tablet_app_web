@@ -16,7 +16,7 @@ export function ScheduleItem({ lecture, onClick }: ScheduleItemProps): JSX.Eleme
   return (
     <button
       type="button"
-      className={`${baseClassName} ${stateClassName}`}
+      className={`${baseClassName} ${stateClassName} min-w-0`}
       onClick={() => onClick(lecture)}
       aria-label={`Pokaż szczegóły: ${lecture.title}`}
     >
@@ -30,9 +30,9 @@ export function ScheduleItem({ lecture, onClick }: ScheduleItemProps): JSX.Eleme
           </span>
         ) : null}
       </div>
-      <h3 className="mb-1 mt-2 text-base font-semibold leading-snug text-foreground">{lecture.title}</h3>
-      <p className="m-0 text-[0.82rem] leading-snug text-muted">{lecture.lecturer}</p>
-      <p className="m-0 text-[0.82rem] leading-snug text-muted">{lecture.group}</p>
+      <h3 className="mb-1 mt-2 break-words text-base font-semibold leading-snug text-foreground">{lecture.title}</h3>
+      <p className="m-0 break-words text-[0.82rem] leading-snug text-muted">{lecture.lecturer}</p>
+      <p className="m-0 break-words text-[0.82rem] leading-snug text-muted">{lecture.group}</p>
     </button>
   );
 }
