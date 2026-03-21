@@ -54,7 +54,7 @@ export function LectureDetailsModal({ lecture, onClose }: LectureDetailsModalPro
         <h2 id="lecture-details-title" className="m-0 text-[clamp(1.62rem,2.9vw,2.2rem)] font-bold text-foreground">
           {lecture.title}
         </h2>
-        <p className="mb-5 mt-2.5 text-[1.2rem] font-bold text-primary">
+        <p className="mb-5 mt-2.5 text-[1.2rem] font-bold text-[#8FC2FF]">
           {lecture.startTime} - {lecture.endTime}
         </p>
 
