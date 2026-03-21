@@ -9,26 +9,26 @@ interface ScheduleSidebarProps {
 export function ScheduleSidebar({ schedule, onSelect }: ScheduleSidebarProps): JSX.Element {
   return (
     <aside
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-panel border border-border bg-surface/90 p-4 shadow-panel max-[900px]:max-h-[42vh] lg:max-h-full"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-panel border border-border bg-surface/90 p-5 shadow-panel max-[900px]:max-h-[42vh] lg:max-h-full"
       aria-label="Najbliższy harmonogram zajęć"
     >
       <div>
-        <p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.11em] text-muted">Harmonogram</p>
-        <h2 className="mb-1 mt-1.5 text-xl font-semibold text-foreground">Co dalej</h2>
+        <p className="m-0 text-[0.9rem] font-bold uppercase tracking-[0.11em] text-muted">Harmonogram</p>
+        <h2 className="mb-1 mt-1.5 text-2xl font-bold text-foreground">Nastepne zajęcia</h2>
       </div>
 
-      <div className="pointer-events-none mt-2 h-4 bg-gradient-to-b from-surface/95 to-transparent" />
+      <div className="pointer-events-none mt-3 h-4 bg-gradient-to-b from-surface/95 to-transparent" />
 
-      <div className="schedule-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="schedule-scrollbar min-h-0 flex-1 overflow-y-auto pr-2">
         {schedule.length > 0 ? (
           schedule.map((lecture, index) => (
             <div key={lecture.id} className="flex flex-col items-center">
               <ScheduleItem lecture={lecture} onClick={onSelect} />
-              {index < schedule.length - 1 ? <span className="my-1 text-lg text-muted/80">↓</span> : null}
+              {index < schedule.length - 1 ? <span className="my-2 inline-block scale-x-[1.3] scale-y-[1.3] text-[1.75rem] font-black leading-none text-muted/95">↓</span> : null}
             </div>
           ))
         ) : (
-          <div className="rounded-card border border-dashed border-border bg-surface/60 p-4 text-sm text-muted">
+          <div className="rounded-card border border-dashed border-border bg-surface/60 p-4 text-base text-muted">
             Brak zaplanowanych zajęć.
           </div>
         )}
