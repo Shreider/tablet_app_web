@@ -7,7 +7,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_BASE_URL=http://backend:3001
+      - VITE_API_BASE_URL=/api
+      - VITE_PROXY_TARGET=http://backend:3001
     depends_on:
       backend:
         condition: service_healthy
@@ -21,7 +22,10 @@ services:
       - "3001:3001"
     environment:
       - PORT=3001
-      - DATABASE_URL=postgresql://tablet:tablet_password@database:5432/tablet_schedule
+      - DATABASE_URL=postgresql://web_app:web_app_password@database:5432/tablet_schedule
+      - DATABASE_ADMIN_URL=postgresql://admin:admin_password@database:5432/tablet_schedule
+      - APP_TIMEZONE=Europe/Warsaw
+      - CORS_ORIGIN=http://localhost:5173,http://192.168.255.2:5173
     depends_on:
       database:
         condition: service_healthy
@@ -31,7 +35,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:3001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+          "fetch('http://localhost:3001/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
         ]
       interval: 10s
       timeout: 3s
@@ -45,12 +49,13 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_DB=tablet_schedule
-      - POSTGRES_USER=tablet
-      - POSTGRES_PASSWORD=tablet_password
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tablet -d tablet_schedule"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d tablet_schedule"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,30 +1,55 @@
 import cors from 'cors';
 import express from 'express';
-import { mockSchedule } from './mockSchedule.js';
+import { corsOrigins, env } from './config/env.js';
+import { closePool, pool } from './db/pool.js';
+import { apiRoutes } from './routes/apiRoutes.js';
 
 const app = express();
-const port = Number(process.env.PORT) || 3001;
 
-app.use(cors());
+const corsOptions = corsOrigins.includes('*')
+  ? undefined
+  : {
+      origin: corsOrigins
+    };
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'room-tablet-backend',
-    timestamp: new Date().toISOString()
+app.use('/api', apiRoutes);
+
+app.use((_req, res) => {
+  res.status(404).json({
+    error: 'NOT_FOUND',
+    message: 'Endpoint not found.'
   });
 });
 
-app.get('/api/schedule/mock', (_req, res) => {
-  res.status(200).json({
-    room: 'A-204',
-    source: 'mock',
-    generatedAt: new Date().toISOString(),
-    items: mockSchedule
+app.use((error, _req, res, _next) => {
+  console.error('Unhandled backend error:', error);
+
+  res.status(500).json({
+    error: 'INTERNAL_SERVER_ERROR',
+    message: 'Unexpected server error.'
   });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Backend listening on port ${port}`);
+const startServer = async () => {
+  await pool.query('SELECT 1');
+
+  app.listen(env.port, '0.0.0.0', () => {
+    console.log(`Backend listening on port ${env.port}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error('Failed to start backend:', error);
+  process.exit(1);
 });
+
+const shutdown = async () => {
+  await closePool();
+  process.exit(0);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

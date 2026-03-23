@@ -1,62 +1,75 @@
 # Room Tablet Preview
 
-Demonstracyjny prototyp aplikacji webowej do wyświetlania informacji o zajęciach na tabletach montowanych przy salach.
+Prototyp webowej aplikacji salowej w architekturze:
+- `frontend` (React + Vite + Tailwind),
+- `backend` (Node.js + Express),
+- `database` (PostgreSQL).
 
-## Cel tej wersji
+## Docelowy przeplyw danych
 
-To jest **preview produktu**:
-- frontend pokazuje harmonogram sali na danych mockowych,
-- backend działa jako szkielet pod przyszłe API,
-- PostgreSQL jest gotowy jako osobny kontener pod dalszy rozwój,
-- brak logowania, panelu admina i produkcyjnej logiki biznesowej.
+Aplikacja dziala w modelu **DB-first**:
+- frontend pobiera dane tylko z backendu (`/api/*`),
+- backend pobiera dane tylko z PostgreSQL,
+- runtime nie korzysta z lokalnych danych testowych jako zrodla danych.
 
-## Stos i architektura
+Dane startowe istnieja wyłącznie w seedzie i sluza tylko do wypelnienia bazy.
 
-Projekt działa na Docker Compose i uruchamia 3 serwisy:
-1. `frontend` (React + Vite + Tailwind CSS)
-2. `backend` (Node.js + Express)
-3. `database` (PostgreSQL 16)
+## Endpointy API
 
-## Widok aplikacji (frontend)
+Wszystkie endpointy backendu sa dostepne wyłącznie pod prefiksem `/api`.
 
-Interfejs jest zaprojektowany pod tablet w orientacji poziomej i wykorzystuje ciemnoniebieski motyw:
-- **lewa sekcja (~80%)**: aktualnie trwające zajęcia,
-- **prawa sekcja (~20%)**: pionowa lista harmonogramu „co dalej”,
-- kliknięcie elementu listy otwiera **jeden reużywalny modal** ze szczegółami.
+- `GET /api/health`
+- `GET /api/rooms`
+- `GET /api/room/:roomId`
+- `GET /api/schedule`
+- `GET /api/schedule?roomId=<id>`
+- `GET /api/schedule?date=YYYY-MM-DD`
 
-Dane pochodzą wyłącznie z mocków (`frontend/src/data/mockSchedule.ts`).
+Przyklady:
+- `http://localhost:3001/api/rooms`
+- `http://localhost:3001/api/room/30`
+- `http://localhost:3001/api/schedule?roomId=A12`
 
-## Struktura projektu
+Legacy trasy poza `/api` (np. `/health`, `/room/...`, `/rooms`) sa wylaczone.
 
-```text
-.
-├── backend
-│   ├── Dockerfile
-│   ├── package.json
-│   └── src
-│       ├── index.js
-│       └── mockSchedule.js
-├── database
-│   └── README.md
-├── frontend
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── src
-│   │   ├── components
-│   │   ├── data
-│   │   ├── types
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   ├── main.tsx
-│   │   └── vite-env.d.ts
-│   ├── index.html
-│   ├── postcss.config.cjs
-│   ├── tailwind.config.cjs
-│   ├── tsconfig.json
-│   └── vite.config.ts
-├── docker-compose.yml
-└── README.md
+## Frontend routing
+
+Frontend zachowuje routing widokow:
+- `/room/:roomId`
+
+Przyklady:
+- `http://localhost:5173/room/30`
+- `http://192.168.255.2:5173/room/A12`
+
+Strona glowna `/` pobiera liste sal z `/api/rooms` i przekierowuje do pierwszej sali z bazy.
+
+## Baza danych
+
+Główne tabele:
+- `rooms`
+- `schedule_entries`
+
+Konta bazy danych:
+- `admin` - konto administracyjne (tworzenie schematu, migracje, seed),
+- `web_app` - konto runtime dla backendu API (odczyt danych).
+
+Schema jest utrzymywana przez:
+- `database/init/001_schema.sql` (inicjalizacja kontenera DB),
+- `npm run db:migrate` (idempotentne dopiecie schematu po stronie backendu).
+
+## Seed
+
+Seed danych testowych:
+- sale: `30`, `31`, `101`, `205`, `A12`,
+- rozne harmonogramy, prowadzacy, grupy, godziny i statusy dnia.
+
+Uruchomienie seedu:
+
+```bash
+docker compose exec -T backend npm run db:seed
 ```
+
+Seed jest powtarzalny (czysci i wypelnia dane od nowa).
 
 ## Uruchomienie
 
@@ -64,16 +77,33 @@ Wymagania:
 - Docker
 - Docker Compose
 
-Start całego środowiska:
+Start projektu:
 
 ```bash
-docker compose up --build -d
+docker compose up -d --build
 ```
 
-Podgląd usług:
+Przy pierwszym uruchomieniu po zmianie kont DB wykonaj reset wolumenu:
 
 ```bash
-docker compose ps
+docker compose down -v
+docker compose up -d --build
+```
+
+Domyslne hasla:
+- `admin` / `admin_password`
+- `web_app` / `web_app_password`
+
+Migracje schematu:
+
+```bash
+docker compose exec -T backend npm run db:migrate
+```
+
+Seed danych:
+
+```bash
+docker compose exec -T backend npm run db:seed
 ```
 
 Zatrzymanie:
@@ -82,47 +112,15 @@ Zatrzymanie:
 docker compose down
 ```
 
-Zatrzymanie z usunięciem wolumenu bazy:
+Zatrzymanie z resetem wolumenu bazy:
 
 ```bash
 docker compose down -v
 ```
 
-## Porty i endpointy
+## Konfiguracja sieci i CORS
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3001`
-- PostgreSQL: `localhost:5432`
-
-Endpointy backendu:
-- `GET /health`
-- `GET /api/schedule/mock`
-
-Przykład:
-
-```bash
-curl http://localhost:3001/health
-curl http://localhost:3001/api/schedule/mock
-```
-
-## Zakres backendu na teraz
-
-Backend jest celowo minimalny:
-- healthcheck,
-- jeden endpoint z danymi mockowymi,
-- brak połączenia z DB w logice runtime.
-
-## Rola PostgreSQL na tym etapie
-
-Baza działa jako osobny kontener i przygotowuje projekt pod kolejne etapy:
-- tabele i migracje,
-- podłączenie ORM,
-- realne zapytania harmonogramu.
-
-## Kierunki rozwoju (następny etap)
-
-- podmiana mocków frontendu na dane z API,
-- filtrowanie po sali/budynku/dniu,
-- automatyczne oznaczanie „trwa teraz” na podstawie czasu,
-- podłączenie backendu do PostgreSQL i dodanie modeli/migracji,
-- rozszerzenie endpointów harmonogramu.
+- backend nasluchuje na `0.0.0.0:3001`,
+- frontend na `0.0.0.0:5173`,
+- CORS dopuszcza `http://localhost:5173` i `http://192.168.255.2:5173`,
+- frontend komunikuje sie z backendem przez `/api` (proxy Vite).

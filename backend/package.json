@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "db:migrate": "node src/scripts/migrateDatabase.js",
+    "db:seed": "node src/scripts/seedDatabase.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "pg": "^8.16.3"
   }
 }

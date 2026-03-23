@@ -1,17 +1,43 @@
 import type { LectureEvent } from '../types/schedule';
 
 interface CurrentLecturePanelProps {
-  lecture: LectureEvent;
+  lecture: LectureEvent | null;
 }
 
 export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.Element {
+  if (!lecture) {
+    return (
+      <section
+        className="flex h-full flex-col rounded-panel border border-border bg-gradient-to-br from-surface to-[#31415f] p-5 shadow-panel sm:p-6"
+        aria-label="Aktualnie trwajace zajecia"
+      >
+        <span className="inline-flex w-fit items-center rounded-full border border-border bg-surface/50 px-3 py-1 text-base font-semibold text-foreground">
+          Brak zajec
+        </span>
+        <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">
+          Brak zaplanowanych zajec na dzisiaj
+        </h2>
+        <p className="m-0 text-[1.05rem] leading-relaxed text-muted">
+          Sprawdz inna sale lub wykonaj ponowny seed danych testowych.
+        </p>
+      </section>
+    );
+  }
+
+  const statusLabel =
+    lecture.status === 'current'
+      ? 'Trwa teraz'
+      : lecture.status === 'upcoming'
+        ? 'Najblizsze zajecia'
+        : 'Ostatnie zajecia';
+
   return (
     <section
       className="flex h-full flex-col rounded-panel border border-border bg-gradient-to-br from-surface to-[#31415f] p-5 shadow-panel sm:p-6"
-      aria-label="Aktualnie trwające zajęcia"
+      aria-label="Aktualnie trwajace zajecia"
     >
       <span className="inline-flex w-fit items-center rounded-full border border-primary/60 bg-primary/25 px-3 py-1 text-base font-semibold text-foreground">
-        Trwa teraz
+        {statusLabel}
       </span>
       <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">{lecture.title}</h2>
       <p className="m-0 text-[clamp(1.2rem,2.3vw,1.85rem)] font-bold text-[#8FC2FF]">
