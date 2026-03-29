@@ -1,15 +1,19 @@
 import crypto from 'crypto';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 import { env } from '../src/config/env.ts';
 import { getDateAndMinutesInTimezone } from '../src/db/time.ts';
 import { roomSeeds } from '../src/seed/seedRooms.ts';
 
+const pool = new Pool({
+  connectionString: env.databaseAdminUrl
+});
+
+const adapter = new PrismaPg(pool);
+
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: env.databaseAdminUrl
-    }
-  }
+  adapter
 });
 
 const toDate = (dateIso: string): Date => new Date(`${dateIso}T00:00:00.000Z`);
@@ -257,5 +261,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await Promise.all([prisma.$disconnect(), pool.end()]);
   });
