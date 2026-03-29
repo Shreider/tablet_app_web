@@ -1,19 +1,27 @@
 import type { RequestHandler } from 'express';
+import { prismaAdmin } from '../../db/prisma.js';
 import {
   createAdminScheduleEntry,
   deleteAdminScheduleEntry,
   findAdminScheduleEntryById,
   listAdminScheduleEntries,
-  listDistinctClassTypes,
+  listClassTypeOptions,
+  listLecturerOptions,
+  listStudentGroupOptions,
+  listSubjectOptions,
   updateAdminScheduleEntry
 } from '../../repositories/admin/adminScheduleEntriesRepository.js';
 import { findAdminRoomById, listRoomOptions } from '../../repositories/admin/adminRoomsRepository.js';
 import type { ScheduleEntryPayload } from '../../types/domain.js';
 import { createError } from '../../types/errors.js';
-import { mapRoomOption, mapScheduleEntryRecord } from '../../utils/adminMappers.js';
+import {
+  mapReferenceOption,
+  mapRoomOption,
+  mapScheduleEntryRecord,
+  mapSubjectRecord
+} from '../../utils/adminMappers.js';
 import {
   asIsoDate,
-  asNonEmptyString,
   asOptionalString,
   asPositiveInteger,
   asTime,
@@ -28,11 +36,11 @@ const ENTRY_SORT_FIELDS = new Set([
   'eventDate',
   'startTime',
   'endTime',
-  'title',
-  'lecturer',
-  'classType',
-  'createdAt',
-  'roomCode'
+  'roomCode',
+  'lecturerName',
+  'classTypeName',
+  'subjectCode',
+  'createdAt'
 ]);
 
 const parseEntrySortBy = (value: unknown): string => {
@@ -54,33 +62,77 @@ const parseEntryPayload = (payload: unknown): ScheduleEntryPayload => {
 
   const roomId = asPositiveInteger(data.roomId, 'roomId');
   const eventDate = asIsoDate(data.eventDate, 'eventDate');
-  const title = asNonEmptyString(data.title, 'title', 200);
-  const lecturer = asNonEmptyString(data.lecturer, 'lecturer', 160);
-  const groupName = asNonEmptyString(data.groupName, 'groupName', 160);
-  const classType = asNonEmptyString(data.classType, 'classType', 120);
+  const lecturerId = asPositiveInteger(data.lecturerId, 'lecturerId');
+  const studentGroupId = asPositiveInteger(data.studentGroupId, 'studentGroupId');
+  const classTypeId = asPositiveInteger(data.classTypeId, 'classTypeId');
+  const subjectId = asPositiveInteger(data.subjectId, 'subjectId');
   const startTime = asTime(data.startTime, 'startTime');
   const endTime = asTime(data.endTime, 'endTime');
-  const description = asNonEmptyString(data.description, 'description', 500);
+  const description = asOptionalString(data.description, 'description', 500) ?? '';
   const note = asOptionalString(data.note, 'note', 500);
-  const fieldOfStudy = asOptionalString(data.fieldOfStudy, 'fieldOfStudy', 180);
-  const subjectCode = asOptionalString(data.subjectCode, 'subjectCode', 64);
+
+  if (!description) {
+    throw createError('description cannot be empty.', 'VALIDATION_ERROR');
+  }
 
   ensureStartBeforeEnd(startTime, endTime);
 
   return {
     roomId,
     eventDate,
-    title,
-    lecturer,
-    groupName,
-    classType,
+    lecturerId,
+    studentGroupId,
+    classTypeId,
+    subjectId,
     startTime,
     endTime,
     description,
-    note,
-    fieldOfStudy,
-    subjectCode
+    note
   };
+};
+
+const validateEntryRelations = async (payload: ScheduleEntryPayload): Promise<void> => {
+  const [room, lecturer, group, classType, subject] = await Promise.all([
+    findAdminRoomById(payload.roomId),
+    prismaAdmin.lecturer.findUnique({ where: { id: payload.lecturerId }, select: { id: true, isActive: true } }),
+    prismaAdmin.studentGroup.findUnique({
+      where: { id: payload.studentGroupId },
+      select: { id: true, isActive: true }
+    }),
+    prismaAdmin.classType.findUnique({ where: { id: payload.classTypeId }, select: { id: true, isActive: true } }),
+    prismaAdmin.subject.findUnique({
+      where: { id: payload.subjectId },
+      select: {
+        id: true,
+        isActive: true,
+        fieldOfStudy: {
+          select: {
+            isActive: true
+          }
+        }
+      }
+    })
+  ]);
+
+  if (!room) {
+    throw createError(`Room with id ${payload.roomId} does not exist.`, 'VALIDATION_ERROR');
+  }
+
+  if (!lecturer || !lecturer.isActive) {
+    throw createError('lecturerId does not point to an active lecturer.', 'VALIDATION_ERROR');
+  }
+
+  if (!group || !group.isActive) {
+    throw createError('studentGroupId does not point to an active student group.', 'VALIDATION_ERROR');
+  }
+
+  if (!classType || !classType.isActive) {
+    throw createError('classTypeId does not point to an active class type.', 'VALIDATION_ERROR');
+  }
+
+  if (!subject || !subject.isActive || !subject.fieldOfStudy.isActive) {
+    throw createError('subjectId does not point to an active subject.', 'VALIDATION_ERROR');
+  }
 };
 
 export const getAdminScheduleEntriesList: RequestHandler = async (req, res, next) => {
@@ -97,8 +149,16 @@ export const getAdminScheduleEntriesList: RequestHandler = async (req, res, next
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
     const roomId = req.query.roomId ? asPositiveInteger(req.query.roomId, 'roomId') : null;
-    const classType = typeof req.query.classType === 'string' ? req.query.classType.trim() : '';
-    const lecturer = typeof req.query.lecturer === 'string' ? req.query.lecturer.trim() : '';
+    const classTypeId = req.query.classTypeId
+      ? asPositiveInteger(req.query.classTypeId, 'classTypeId')
+      : null;
+    const lecturerId = req.query.lecturerId
+      ? asPositiveInteger(req.query.lecturerId, 'lecturerId')
+      : null;
+    const studentGroupId = req.query.studentGroupId
+      ? asPositiveInteger(req.query.studentGroupId, 'studentGroupId')
+      : null;
+    const subjectId = req.query.subjectId ? asPositiveInteger(req.query.subjectId, 'subjectId') : null;
     const dateFrom = req.query.dateFrom ? asIsoDate(req.query.dateFrom, 'dateFrom') : null;
     const dateTo = req.query.dateTo ? asIsoDate(req.query.dateTo, 'dateTo') : null;
 
@@ -112,10 +172,12 @@ export const getAdminScheduleEntriesList: RequestHandler = async (req, res, next
       offset,
       search,
       roomId,
-      classType,
+      classTypeId,
+      lecturerId,
+      studentGroupId,
+      subjectId,
       dateFrom,
       dateTo,
-      lecturer,
       sortBy,
       sortOrder
     });
@@ -155,14 +217,7 @@ export const getAdminScheduleEntryDetails: RequestHandler = async (req, res, nex
 export const createAdminScheduleEntryRecord: RequestHandler = async (req, res, next) => {
   try {
     const payload = parseEntryPayload(req.body);
-
-    const room = await findAdminRoomById(payload.roomId);
-    if (!room) {
-      return res.status(400).json({
-        error: 'INVALID_ROOM',
-        message: `Room with id ${payload.roomId} does not exist.`
-      });
-    }
+    await validateEntryRelations(payload);
 
     const entryId = await createAdminScheduleEntry(payload);
     const createdEntry = await findAdminScheduleEntryById(entryId);
@@ -188,14 +243,7 @@ export const updateAdminScheduleEntryRecord: RequestHandler = async (req, res, n
     }
 
     const payload = parseEntryPayload(req.body);
-
-    const room = await findAdminRoomById(payload.roomId);
-    if (!room) {
-      return res.status(400).json({
-        error: 'INVALID_ROOM',
-        message: `Room with id ${payload.roomId} does not exist.`
-      });
-    }
+    await validateEntryRelations(payload);
 
     await updateAdminScheduleEntry(entryId, payload);
     const updatedEntry = await findAdminScheduleEntryById(entryId);
@@ -233,11 +281,20 @@ export const deleteAdminScheduleEntryRecord: RequestHandler = async (req, res, n
 
 export const getAdminEntryFormOptions: RequestHandler = async (_req, res, next) => {
   try {
-    const [rooms, classTypes] = await Promise.all([listRoomOptions(), listDistinctClassTypes()]);
+    const [rooms, lecturers, studentGroups, classTypes, subjects] = await Promise.all([
+      listRoomOptions(),
+      listLecturerOptions(),
+      listStudentGroupOptions(),
+      listClassTypeOptions(),
+      listSubjectOptions()
+    ]);
 
     return res.status(200).json({
       rooms: rooms.map(mapRoomOption),
-      classTypes
+      lecturers: lecturers.map(mapReferenceOption),
+      studentGroups: studentGroups.map(mapReferenceOption),
+      classTypes: classTypes.map(mapReferenceOption),
+      subjects: subjects.map(mapSubjectRecord)
     });
   } catch (error) {
     return next(error);

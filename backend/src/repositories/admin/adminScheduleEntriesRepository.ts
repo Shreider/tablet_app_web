@@ -2,9 +2,11 @@ import type { Prisma } from '@prisma/client';
 import { prismaAdmin } from '../../db/prisma.js';
 import type {
   PaginationResult,
+  ReferenceOptionRow,
   ScheduleEntryPayload,
   ScheduleEntryWithRoomRow,
-  SortOrder
+  SortOrder,
+  SubjectRow
 } from '../../types/domain.js';
 import { formatDateOnly, formatTimeValue, toDateOnly, toTimeValue } from '../../utils/prismaDate.js';
 
@@ -13,11 +15,11 @@ type EntrySortBy =
   | 'eventDate'
   | 'startTime'
   | 'endTime'
-  | 'title'
-  | 'lecturer'
-  | 'classType'
-  | 'createdAt'
-  | 'roomCode';
+  | 'roomCode'
+  | 'lecturerName'
+  | 'classTypeName'
+  | 'subjectCode'
+  | 'createdAt';
 
 interface ListScheduleEntriesParams {
   page: number;
@@ -25,10 +27,12 @@ interface ListScheduleEntriesParams {
   offset: number;
   search: string;
   roomId: number | null;
-  classType: string;
+  classTypeId: number | null;
+  lecturerId: number | null;
+  studentGroupId: number | null;
+  subjectId: number | null;
   dateFrom: string | null;
   dateTo: string | null;
-  lecturer: string;
   sortBy: string;
   sortOrder: SortOrder;
 }
@@ -39,15 +43,18 @@ const toRow = (entry: {
   room: { roomCode: string; displayName: string };
   eventDate: Date;
   title: string;
-  lecturer: string;
-  groupName: string;
-  classType: string;
+  lecturerId: number;
+  lecturer: { fullName: string };
+  studentGroupId: number;
+  studentGroup: { name: string };
+  classTypeId: number;
+  classType: { name: string };
+  subjectId: number;
+  subject: { code: string; name: string; fieldOfStudyId: number; fieldOfStudy: { name: string } };
   startTime: Date;
   endTime: Date;
   description: string;
   note: string | null;
-  fieldOfStudy: string | null;
-  subjectCode: string | null;
   createdAt: Date;
 }): ScheduleEntryWithRoomRow => ({
   id: entry.id,
@@ -56,28 +63,43 @@ const toRow = (entry: {
   display_name: entry.room.displayName,
   event_date: formatDateOnly(entry.eventDate),
   title: entry.title,
-  lecturer: entry.lecturer,
-  group_name: entry.groupName,
-  class_type: entry.classType,
+  lecturer_id: entry.lecturerId,
+  lecturer_name: entry.lecturer.fullName,
+  group_id: entry.studentGroupId,
+  group_name: entry.studentGroup.name,
+  class_type_id: entry.classTypeId,
+  class_type_name: entry.classType.name,
+  subject_id: entry.subjectId,
+  subject_code: entry.subject.code,
+  subject_name: entry.subject.name,
+  field_of_study_id: entry.subject.fieldOfStudyId,
+  field_of_study_name: entry.subject.fieldOfStudy.name,
   start_time: formatTimeValue(entry.startTime),
   end_time: formatTimeValue(entry.endTime),
   description: entry.description,
   note: entry.note,
-  field_of_study: entry.fieldOfStudy,
-  subject_code: entry.subjectCode,
   created_at: entry.createdAt
 });
 
 const buildWhere = ({
   search,
   roomId,
-  classType,
+  classTypeId,
+  lecturerId,
+  studentGroupId,
+  subjectId,
   dateFrom,
-  dateTo,
-  lecturer
+  dateTo
 }: Pick<
   ListScheduleEntriesParams,
-  'search' | 'roomId' | 'classType' | 'dateFrom' | 'dateTo' | 'lecturer'
+  | 'search'
+  | 'roomId'
+  | 'classTypeId'
+  | 'lecturerId'
+  | 'studentGroupId'
+  | 'subjectId'
+  | 'dateFrom'
+  | 'dateTo'
 >): Prisma.ScheduleEntryWhereInput => {
   const where: Prisma.ScheduleEntryWhereInput = {};
   const andFilters: Prisma.ScheduleEntryWhereInput[] = [];
@@ -86,10 +108,12 @@ const buildWhere = ({
     andFilters.push({
       OR: [
         { title: { contains: search, mode: 'insensitive' } },
-        { lecturer: { contains: search, mode: 'insensitive' } },
-        { groupName: { contains: search, mode: 'insensitive' } },
-        { classType: { contains: search, mode: 'insensitive' } },
-        { subjectCode: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { lecturer: { fullName: { contains: search, mode: 'insensitive' } } },
+        { studentGroup: { name: { contains: search, mode: 'insensitive' } } },
+        { classType: { name: { contains: search, mode: 'insensitive' } } },
+        { subject: { code: { contains: search, mode: 'insensitive' } } },
+        { subject: { name: { contains: search, mode: 'insensitive' } } },
         { room: { roomCode: { contains: search, mode: 'insensitive' } } }
       ]
     });
@@ -99,17 +123,20 @@ const buildWhere = ({
     andFilters.push({ roomId });
   }
 
-  if (classType) {
-    andFilters.push({ classType });
+  if (classTypeId) {
+    andFilters.push({ classTypeId });
   }
 
-  if (lecturer) {
-    andFilters.push({
-      lecturer: {
-        contains: lecturer,
-        mode: 'insensitive'
-      }
-    });
+  if (lecturerId) {
+    andFilters.push({ lecturerId });
+  }
+
+  if (studentGroupId) {
+    andFilters.push({ studentGroupId });
+  }
+
+  if (subjectId) {
+    andFilters.push({ subjectId });
   }
 
   if (dateFrom || dateTo) {
@@ -143,20 +170,56 @@ const resolveOrderBy = (
       return [{ startTime: sortOrder }, { id: sortOrder }];
     case 'endTime':
       return [{ endTime: sortOrder }, { id: sortOrder }];
-    case 'title':
-      return [{ title: sortOrder }, { id: sortOrder }];
-    case 'lecturer':
-      return [{ lecturer: sortOrder }, { id: sortOrder }];
-    case 'classType':
-      return [{ classType: sortOrder }, { id: sortOrder }];
-    case 'createdAt':
-      return [{ createdAt: sortOrder }, { id: sortOrder }];
     case 'roomCode':
       return [{ room: { roomCode: sortOrder } }, { eventDate: sortOrder }, { startTime: sortOrder }];
+    case 'lecturerName':
+      return [{ lecturer: { fullName: sortOrder } }, { eventDate: sortOrder }, { startTime: sortOrder }];
+    case 'classTypeName':
+      return [{ classType: { name: sortOrder } }, { eventDate: sortOrder }, { startTime: sortOrder }];
+    case 'subjectCode':
+      return [{ subject: { code: sortOrder } }, { eventDate: sortOrder }, { startTime: sortOrder }];
+    case 'createdAt':
+      return [{ createdAt: sortOrder }, { id: sortOrder }];
     default:
       return [{ eventDate: sortOrder }, { startTime: sortOrder }, { id: sortOrder }];
   }
 };
+
+const includeScheduleRelations = {
+  room: {
+    select: {
+      roomCode: true,
+      displayName: true
+    }
+  },
+  lecturer: {
+    select: {
+      fullName: true
+    }
+  },
+  studentGroup: {
+    select: {
+      name: true
+    }
+  },
+  classType: {
+    select: {
+      name: true
+    }
+  },
+  subject: {
+    select: {
+      code: true,
+      name: true,
+      fieldOfStudyId: true,
+      fieldOfStudy: {
+        select: {
+          name: true
+        }
+      }
+    }
+  }
+} satisfies Prisma.ScheduleEntryInclude;
 
 export const listAdminScheduleEntries = async ({
   page,
@@ -164,34 +227,31 @@ export const listAdminScheduleEntries = async ({
   offset,
   search,
   roomId,
-  classType,
+  classTypeId,
+  lecturerId,
+  studentGroupId,
+  subjectId,
   dateFrom,
   dateTo,
-  lecturer,
   sortBy,
   sortOrder
 }: ListScheduleEntriesParams): Promise<PaginationResult<ScheduleEntryWithRoomRow>> => {
   const where = buildWhere({
     search,
     roomId,
-    classType,
+    classTypeId,
+    lecturerId,
+    studentGroupId,
+    subjectId,
     dateFrom,
-    dateTo,
-    lecturer
+    dateTo
   });
 
   const [total, rows] = await Promise.all([
     prismaAdmin.scheduleEntry.count({ where }),
     prismaAdmin.scheduleEntry.findMany({
       where,
-      include: {
-        room: {
-          select: {
-            roomCode: true,
-            displayName: true
-          }
-        }
-      },
+      include: includeScheduleRelations,
       orderBy: resolveOrderBy(sortBy, sortOrder),
       skip: offset,
       take: limit
@@ -213,47 +273,52 @@ export const findAdminScheduleEntryById = async (
     where: {
       id: entryId
     },
-    include: {
-      room: {
-        select: {
-          roomCode: true,
-          displayName: true
-        }
-      }
-    }
+    include: includeScheduleRelations
   });
 
   return entry ? toRow(entry) : null;
 };
 
+const resolveEntryTitle = async (subjectId: number): Promise<string> => {
+  const subject = await prismaAdmin.subject.findUnique({
+    where: {
+      id: subjectId
+    },
+    select: {
+      name: true
+    }
+  });
+
+  return subject?.name ?? 'Zajecia';
+};
+
 export const createAdminScheduleEntry = async ({
   roomId,
   eventDate,
-  title,
-  lecturer,
-  groupName,
-  classType,
+  lecturerId,
+  studentGroupId,
+  classTypeId,
+  subjectId,
   startTime,
   endTime,
   description,
-  note,
-  fieldOfStudy,
-  subjectCode
+  note
 }: ScheduleEntryPayload): Promise<number> => {
+  const title = await resolveEntryTitle(subjectId);
+
   const entry = await prismaAdmin.scheduleEntry.create({
     data: {
       roomId,
       eventDate: toDateOnly(eventDate),
+      lecturerId,
+      studentGroupId,
+      classTypeId,
+      subjectId,
       title,
-      lecturer,
-      groupName,
-      classType,
       startTime: toTimeValue(startTime),
       endTime: toTimeValue(endTime),
       description,
-      note,
-      fieldOfStudy,
-      subjectCode
+      note
     },
     select: {
       id: true
@@ -268,18 +333,18 @@ export const updateAdminScheduleEntry = async (
   {
     roomId,
     eventDate,
-    title,
-    lecturer,
-    groupName,
-    classType,
+    lecturerId,
+    studentGroupId,
+    classTypeId,
+    subjectId,
     startTime,
     endTime,
     description,
-    note,
-    fieldOfStudy,
-    subjectCode
+    note
   }: ScheduleEntryPayload
 ): Promise<number> => {
+  const title = await resolveEntryTitle(subjectId);
+
   const entry = await prismaAdmin.scheduleEntry.update({
     where: {
       id: entryId
@@ -287,16 +352,15 @@ export const updateAdminScheduleEntry = async (
     data: {
       roomId,
       eventDate: toDateOnly(eventDate),
+      lecturerId,
+      studentGroupId,
+      classTypeId,
+      subjectId,
       title,
-      lecturer,
-      groupName,
-      classType,
       startTime: toTimeValue(startTime),
       endTime: toTimeValue(endTime),
       description,
-      note,
-      fieldOfStudy,
-      subjectCode
+      note
     },
     select: {
       id: true
@@ -319,30 +383,86 @@ export const deleteAdminScheduleEntry = async (entryId: number): Promise<number>
   return entry.id;
 };
 
-export const listDistinctClassTypes = async (): Promise<string[]> => {
-  const rows = await prismaAdmin.scheduleEntry.findMany({
-    distinct: ['classType'],
-    select: {
-      classType: true
+export const listLecturerOptions = async (): Promise<ReferenceOptionRow[]> => {
+  const rows = await prismaAdmin.lecturer.findMany({
+    where: {
+      isActive: true
     },
     orderBy: {
-      classType: 'asc'
+      fullName: 'asc'
+    },
+    select: {
+      id: true,
+      fullName: true
     }
   });
 
-  return rows.map((row) => row.classType);
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.fullName
+  }));
 };
 
-export const listDistinctBuildings = async (): Promise<string[]> => {
-  const rows = await prismaAdmin.room.findMany({
-    distinct: ['building'],
-    select: {
-      building: true
+export const listStudentGroupOptions = async (): Promise<ReferenceOptionRow[]> => {
+  const rows = await prismaAdmin.studentGroup.findMany({
+    where: {
+      isActive: true
     },
     orderBy: {
-      building: 'asc'
+      name: 'asc'
+    },
+    select: {
+      id: true,
+      name: true
     }
   });
 
-  return rows.map((row) => row.building);
+  return rows;
+};
+
+export const listClassTypeOptions = async (): Promise<ReferenceOptionRow[]> => {
+  const rows = await prismaAdmin.classType.findMany({
+    where: {
+      isActive: true
+    },
+    orderBy: {
+      name: 'asc'
+    },
+    select: {
+      id: true,
+      name: true
+    }
+  });
+
+  return rows;
+};
+
+export const listSubjectOptions = async (): Promise<SubjectRow[]> => {
+  const rows = await prismaAdmin.subject.findMany({
+    where: {
+      isActive: true,
+      fieldOfStudy: {
+        isActive: true
+      }
+    },
+    orderBy: [{ code: 'asc' }],
+    include: {
+      fieldOfStudy: {
+        select: {
+          name: true
+        }
+      }
+    }
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    field_of_study_id: row.fieldOfStudyId,
+    field_of_study_name: row.fieldOfStudy.name,
+    is_active: row.isActive,
+    created_at: row.createdAt,
+    updated_at: row.updatedAt
+  }));
 };

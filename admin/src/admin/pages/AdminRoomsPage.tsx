@@ -20,7 +20,7 @@ import {
   formatDate,
   formatDateTime
 } from '../components/AdminUi';
-import type { AdminRoom, AdminRoomsOptionsResponse, AdminScheduleEntry } from '../types';
+import type { AdminRoom, AdminRoomsOptionsResponse, AdminScheduleEntry, AdminWingOption } from '../types';
 
 interface RoomsState {
   loading: boolean;
@@ -50,9 +50,17 @@ const initialRoomsState: RoomsState = {
 const initialRoomForm: RoomFormPayload = {
   roomCode: '',
   displayName: '',
-  building: '',
-  wing: '',
-  floorLabel: ''
+  buildingId: 0,
+  wingId: 0,
+  floorId: 0
+};
+
+const filterWingsByBuilding = (wings: AdminWingOption[], buildingId: number): AdminWingOption[] => {
+  if (!buildingId) {
+    return wings;
+  }
+
+  return wings.filter((wing) => wing.buildingId === buildingId);
 };
 
 export function AdminRoomsPage(): JSX.Element {
@@ -62,13 +70,15 @@ export function AdminRoomsPage(): JSX.Element {
   const [options, setOptions] = useState<AdminRoomsOptionsResponse>({
     rooms: [],
     buildings: [],
-    floorLabels: []
+    wings: [],
+    floors: []
   });
 
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
-  const [building, setBuilding] = useState('');
-  const [floorLabel, setFloorLabel] = useState('');
+  const [buildingId, setBuildingId] = useState<number | null>(null);
+  const [wingId, setWingId] = useState<number | null>(null);
+  const [floorId, setFloorId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('roomCode');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
@@ -107,8 +117,9 @@ export function AdminRoomsPage(): JSX.Element {
         page,
         limit: 10,
         search,
-        building,
-        floorLabel,
+        buildingId,
+        wingId,
+        floorId,
         sortBy,
         sortOrder
       });
@@ -132,27 +143,28 @@ export function AdminRoomsPage(): JSX.Element {
     }
   };
 
-  useEffect(() => {
+  const loadOptions = async () => {
     if (!token) {
       return;
     }
 
-    const loadOptions = async () => {
-      try {
-        const payload = await fetchAdminRoomsOptions(token);
-        setOptions(payload);
-      } catch {
-        setOptions({ rooms: [], buildings: [], floorLabels: [] });
-      }
-    };
+    try {
+      const payload = await fetchAdminRoomsOptions(token);
+      setOptions(payload);
+    } catch {
+      setOptions({ rooms: [], buildings: [], wings: [], floors: [] });
+    }
+  };
 
+  useEffect(() => {
     void loadOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
     void loadRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page, search, building, floorLabel, sortBy, sortOrder]);
+  }, [token, page, search, buildingId, wingId, floorId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (!flashMessage) {
@@ -166,7 +178,12 @@ export function AdminRoomsPage(): JSX.Element {
   const openCreateForm = () => {
     setFormMode('create');
     setEditingRoom(null);
-    setFormState(initialRoomForm);
+    setFormState({
+      ...initialRoomForm,
+      buildingId: options.buildings[0]?.id ?? 0,
+      wingId: options.wings[0]?.id ?? 0,
+      floorId: options.floors[0]?.id ?? 0
+    });
     setFormError(null);
     setFormOpen(true);
   };
@@ -177,9 +194,9 @@ export function AdminRoomsPage(): JSX.Element {
     setFormState({
       roomCode: room.roomCode,
       displayName: room.displayName,
-      building: room.building,
-      wing: room.wing,
-      floorLabel: room.floorLabel
+      buildingId: room.buildingId,
+      wingId: room.wingId,
+      floorId: room.floorId
     });
     setFormError(null);
     setFormOpen(true);
@@ -188,9 +205,9 @@ export function AdminRoomsPage(): JSX.Element {
   const validateRoomForm = (payload: RoomFormPayload): string | null => {
     if (!payload.roomCode.trim()) return 'Podaj kod sali.';
     if (!payload.displayName.trim()) return 'Podaj nazwe wyswietlana sali.';
-    if (!payload.building.trim()) return 'Podaj budynek.';
-    if (!payload.wing.trim()) return 'Podaj skrzydlo/strefe.';
-    if (!payload.floorLabel.trim()) return 'Podaj pietro.';
+    if (!payload.buildingId) return 'Wybierz budynek z listy.';
+    if (!payload.wingId) return 'Wybierz skrzydlo z listy.';
+    if (!payload.floorId) return 'Wybierz pietro z listy.';
     return null;
   };
 
@@ -220,9 +237,7 @@ export function AdminRoomsPage(): JSX.Element {
       }
 
       setFormOpen(false);
-      await loadRooms();
-      const refreshedOptions = await fetchAdminRoomsOptions(token);
-      setOptions(refreshedOptions);
+      await Promise.all([loadRooms(), loadOptions()]);
     } catch (error) {
       const message =
         error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac zmian sali.';
@@ -288,9 +303,7 @@ export function AdminRoomsPage(): JSX.Element {
           ? `Usunieto sale i ${response.relatedEntriesDeleted} powiazanych wpisow.`
           : `Usunieto sale ${deleteTarget.roomCode}.`
       );
-      await loadRooms();
-      const refreshedOptions = await fetchAdminRoomsOptions(token);
-      setOptions(refreshedOptions);
+      await Promise.all([loadRooms(), loadOptions()]);
     } catch (error) {
       if (error instanceof AdminApiError && error.status === 409) {
         setDeleteError(
@@ -298,9 +311,7 @@ export function AdminRoomsPage(): JSX.Element {
         );
         setDeleteCascade(true);
       } else {
-        setDeleteError(
-          error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac sali.'
-        );
+        setDeleteError(error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac sali.');
       }
     } finally {
       setDeleteBusy(false);
@@ -308,6 +319,14 @@ export function AdminRoomsPage(): JSX.Element {
   };
 
   const totalLabel = useMemo(() => `Lacznie rekordow: ${state.total}`, [state.total]);
+  const filteredWings = useMemo(
+    () => filterWingsByBuilding(options.wings, buildingId ?? 0),
+    [options.wings, buildingId]
+  );
+  const formWings = useMemo(
+    () => filterWingsByBuilding(options.wings, formState.buildingId),
+    [options.wings, formState.buildingId]
+  );
 
   return (
     <div className="space-y-4">
@@ -315,14 +334,12 @@ export function AdminRoomsPage(): JSX.Element {
         title="Encja: rooms"
         subtitle={totalLabel}
         actions={
-          <>
-            <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
-              Dodaj sale
-            </button>
-          </>
+          <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
+            Dodaj sale
+          </button>
         }
       >
-        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-6">
+        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-7">
           <label className="admin-field xl:col-span-2">
             <span className="admin-label">Wyszukiwarka</span>
             <div className="flex gap-2">
@@ -349,16 +366,37 @@ export function AdminRoomsPage(): JSX.Element {
             <span className="admin-label">Budynek</span>
             <select
               className="admin-input"
-              value={building}
+              value={buildingId ?? ''}
               onChange={(event) => {
+                const nextBuildingId = event.target.value ? Number(event.target.value) : null;
                 setPage(1);
-                setBuilding(event.target.value);
+                setBuildingId(nextBuildingId);
+                setWingId(null);
               }}
             >
               <option value="">Wszystkie</option>
-              {options.buildings.map((value) => (
-                <option key={value} value={value}>
-                  {value}
+              {options.buildings.map((building) => (
+                <option key={building.id} value={building.id}>
+                  {building.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-label">Skrzydlo</span>
+            <select
+              className="admin-input"
+              value={wingId ?? ''}
+              onChange={(event) => {
+                setPage(1);
+                setWingId(event.target.value ? Number(event.target.value) : null);
+              }}
+            >
+              <option value="">Wszystkie</option>
+              {filteredWings.map((wing) => (
+                <option key={wing.id} value={wing.id}>
+                  {wing.name} ({wing.buildingName})
                 </option>
               ))}
             </select>
@@ -368,16 +406,16 @@ export function AdminRoomsPage(): JSX.Element {
             <span className="admin-label">Pietro</span>
             <select
               className="admin-input"
-              value={floorLabel}
+              value={floorId ?? ''}
               onChange={(event) => {
                 setPage(1);
-                setFloorLabel(event.target.value);
+                setFloorId(event.target.value ? Number(event.target.value) : null);
               }}
             >
               <option value="">Wszystkie</option>
-              {options.floorLabels.map((value) => (
-                <option key={value} value={value}>
-                  {value}
+              {options.floors.map((floor) => (
+                <option key={floor.id} value={floor.id}>
+                  {floor.label}
                 </option>
               ))}
             </select>
@@ -395,14 +433,14 @@ export function AdminRoomsPage(): JSX.Element {
             >
               <option value="roomCode">Kod sali</option>
               <option value="displayName">Nazwa</option>
-              <option value="building">Budynek</option>
+              <option value="buildingName">Budynek</option>
               <option value="entriesCount">Liczba wpisow</option>
               <option value="updatedAt">Data modyfikacji</option>
             </select>
           </label>
 
           <label className="admin-field">
-            <span className="admin-label">Kierunek sortowania</span>
+            <span className="admin-label">Kierunek</span>
             <select
               className="admin-input"
               value={sortOrder}
@@ -450,8 +488,8 @@ export function AdminRoomsPage(): JSX.Element {
                     <tr key={room.id}>
                       <td>{room.roomCode}</td>
                       <td>{room.displayName}</td>
-                      <td>{room.building}</td>
-                      <td>{room.wing}</td>
+                      <td>{room.buildingName}</td>
+                      <td>{room.wingName}</td>
                       <td>{room.floorLabel}</td>
                       <td>{room.entriesCount}</td>
                       <td>{formatDateTime(room.updatedAt)}</td>
@@ -493,7 +531,7 @@ export function AdminRoomsPage(): JSX.Element {
       <ConfirmModal
         open={formOpen}
         title={formMode === 'create' ? 'Dodaj nowa sale' : `Edytuj sale ${editingRoom?.roomCode ?? ''}`}
-        message="Wprowadz dane sali. Pola oznaczone sa wymagane."
+        message="Wprowadz dane sali. Powiazania lokalizacji wybieraj z predefiniowanych list."
         confirmLabel={formMode === 'create' ? 'Dodaj sale' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
@@ -532,34 +570,65 @@ export function AdminRoomsPage(): JSX.Element {
           <div className="grid gap-3 md:grid-cols-3">
             <label className="admin-field">
               <span className="admin-label">Budynek</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.building}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, building: event.target.value }))
-                }
+                value={formState.buildingId}
+                onChange={(event) => {
+                  const nextBuildingId = Number(event.target.value);
+                  const nextWings = filterWingsByBuilding(options.wings, nextBuildingId);
+                  setFormState((prev) => ({
+                    ...prev,
+                    buildingId: nextBuildingId,
+                    wingId: nextWings.some((wing) => wing.id === prev.wingId)
+                      ? prev.wingId
+                      : (nextWings[0]?.id ?? 0)
+                  }));
+                }}
                 required
-              />
+              >
+                <option value={0}>Wybierz budynek</option>
+                {options.buildings.map((building) => (
+                  <option key={building.id} value={building.id}>
+                    {building.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="admin-field">
               <span className="admin-label">Skrzydlo</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.wing}
-                onChange={(event) => setFormState((prev) => ({ ...prev, wing: event.target.value }))}
+                value={formState.wingId}
+                onChange={(event) =>
+                  setFormState((prev) => ({ ...prev, wingId: Number(event.target.value) }))
+                }
                 required
-              />
+              >
+                <option value={0}>Wybierz skrzydlo</option>
+                {formWings.map((wing) => (
+                  <option key={wing.id} value={wing.id}>
+                    {wing.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="admin-field">
               <span className="admin-label">Pietro</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.floorLabel}
+                value={formState.floorId}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, floorLabel: event.target.value }))
+                  setFormState((prev) => ({ ...prev, floorId: Number(event.target.value) }))
                 }
                 required
-              />
+              >
+                <option value={0}>Wybierz pietro</option>
+                {options.floors.map((floor) => (
+                  <option key={floor.id} value={floor.id}>
+                    {floor.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -587,12 +656,24 @@ export function AdminRoomsPage(): JSX.Element {
         ) : detailsState.room ? (
           <div className="space-y-3">
             <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
-              <p className="m-0">Nazwa: <strong>{detailsState.room.displayName}</strong></p>
-              <p className="m-0">Budynek: <strong>{detailsState.room.building}</strong></p>
-              <p className="m-0">Skrzydlo: <strong>{detailsState.room.wing}</strong></p>
-              <p className="m-0">Pietro: <strong>{detailsState.room.floorLabel}</strong></p>
-              <p className="m-0">Utworzono: <strong>{formatDate(detailsState.room.createdAt)}</strong></p>
-              <p className="m-0">Aktualizacja: <strong>{formatDateTime(detailsState.room.updatedAt)}</strong></p>
+              <p className="m-0">
+                Nazwa: <strong>{detailsState.room.displayName}</strong>
+              </p>
+              <p className="m-0">
+                Budynek: <strong>{detailsState.room.buildingName}</strong>
+              </p>
+              <p className="m-0">
+                Skrzydlo: <strong>{detailsState.room.wingName}</strong>
+              </p>
+              <p className="m-0">
+                Pietro: <strong>{detailsState.room.floorLabel}</strong>
+              </p>
+              <p className="m-0">
+                Utworzono: <strong>{formatDate(detailsState.room.createdAt)}</strong>
+              </p>
+              <p className="m-0">
+                Aktualizacja: <strong>{formatDateTime(detailsState.room.updatedAt)}</strong>
+              </p>
             </div>
 
             {detailsState.entries.length === 0 ? (
@@ -616,7 +697,7 @@ export function AdminRoomsPage(): JSX.Element {
                           {entry.startTime}-{entry.endTime}
                         </td>
                         <td>{entry.title}</td>
-                        <td>{entry.classType}</td>
+                        <td>{entry.classTypeName}</td>
                       </tr>
                     ))}
                   </tbody>

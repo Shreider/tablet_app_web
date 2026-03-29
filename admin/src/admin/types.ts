@@ -2,8 +2,11 @@ export interface AdminRoom {
   id: number;
   roomCode: string;
   displayName: string;
-  building: string;
-  wing: string;
+  buildingId: number;
+  buildingName: string;
+  wingId: number;
+  wingName: string;
+  floorId: number;
   floorLabel: string;
   createdAt: string;
   updatedAt: string;
@@ -17,15 +20,21 @@ export interface AdminScheduleEntry {
   roomDisplayName: string;
   eventDate: string;
   title: string;
-  lecturer: string;
-  groupName: string;
-  classType: string;
+  lecturerId: number;
+  lecturerName: string;
+  studentGroupId: number;
+  studentGroupName: string;
+  classTypeId: number;
+  classTypeName: string;
+  subjectId: number;
+  subjectCode: string;
+  subjectName: string;
+  fieldOfStudyId: number;
+  fieldOfStudyName: string;
   startTime: string;
   endTime: string;
   description: string;
   note: string | null;
-  fieldOfStudy: string | null;
-  subjectCode: string | null;
   createdAt: string;
 }
 
@@ -33,6 +42,34 @@ export interface AdminRoomOption {
   id: number;
   roomCode: string;
   displayName: string;
+}
+
+export interface AdminReferenceOption {
+  id: number;
+  name: string;
+}
+
+export interface AdminWingOption {
+  id: number;
+  name: string;
+  buildingId: number;
+  buildingName: string;
+}
+
+export interface AdminFloorOption {
+  id: number;
+  label: string;
+}
+
+export interface AdminSubject {
+  id: number;
+  code: string;
+  name: string;
+  fieldOfStudyId: number;
+  fieldOfStudyName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -74,11 +111,101 @@ export interface AdminDashboardResponse {
 
 export interface AdminRoomsOptionsResponse {
   rooms: AdminRoomOption[];
-  buildings: string[];
-  floorLabels: string[];
+  buildings: AdminReferenceOption[];
+  wings: AdminWingOption[];
+  floors: AdminFloorOption[];
 }
 
 export interface AdminScheduleOptionsResponse {
   rooms: AdminRoomOption[];
-  classTypes: string[];
+  lecturers: AdminReferenceOption[];
+  studentGroups: AdminReferenceOption[];
+  classTypes: AdminReferenceOption[];
+  subjects: AdminSubject[];
+}
+
+export interface AdminBuilding {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminWing {
+  id: number;
+  buildingId: number;
+  buildingName: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminFloor {
+  id: number;
+  label: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminLecturer {
+  id: number;
+  fullName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminStudentGroup {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminClassType {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminFieldOfStudy {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminReferencesDatasetResponse {
+  buildings: AdminBuilding[];
+  wings: AdminWing[];
+  floors: AdminFloor[];
+  lecturers: AdminLecturer[];
+  studentGroups: AdminStudentGroup[];
+  classTypes: AdminClassType[];
+  fieldsOfStudy: AdminFieldOfStudy[];
+  subjects: AdminSubject[];
+}
+
+export type AdminReferenceEntity =
+  | 'buildings'
+  | 'wings'
+  | 'floors'
+  | 'lecturers'
+  | 'student-groups'
+  | 'class-types'
+  | 'fields-of-study'
+  | 'subjects';
+
+export interface AdminReferenceDependency {
+  key: string;
+  count: number;
+  message: string;
 }

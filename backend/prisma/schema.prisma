@@ -7,37 +7,164 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Room {
-  id              Int             @id @default(autoincrement())
-  roomCode        String          @unique @map("room_code") @db.VarChar(32)
-  displayName     String          @map("display_name")
-  building        String
-  wing            String
-  floorLabel      String          @map("floor_label")
-  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+model Building {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  wings Wing[]
+  rooms Room[]
+
+  @@map("buildings")
+}
+
+model Wing {
+  id         Int      @id @default(autoincrement())
+  buildingId Int      @map("building_id")
+  name       String   @db.VarChar(120)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rooms    Room[]
+
+  @@unique([buildingId, name], map: "wings_building_name_key")
+  @@index([buildingId], map: "idx_wings_building")
+  @@map("wings")
+}
+
+model Floor {
+  id        Int      @id @default(autoincrement())
+  label     String   @unique @map("label") @db.VarChar(80)
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rooms Room[]
+
+  @@map("floors")
+}
+
+model Lecturer {
+  id        Int      @id @default(autoincrement())
+  fullName  String   @unique @map("full_name") @db.VarChar(160)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
   scheduleEntries ScheduleEntry[]
 
+  @@map("lecturers")
+}
+
+model StudentGroup {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(160)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  scheduleEntries ScheduleEntry[]
+
+  @@map("student_groups")
+}
+
+model ClassType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  scheduleEntries ScheduleEntry[]
+
+  @@map("class_types")
+}
+
+model FieldOfStudy {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(180)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  subjects Subject[]
+
+  @@map("fields_of_study")
+}
+
+model Subject {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(64)
+  name           String   @db.VarChar(200)
+  fieldOfStudyId Int      @map("field_of_study_id")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  fieldOfStudy    FieldOfStudy    @relation(fields: [fieldOfStudyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  scheduleEntries ScheduleEntry[]
+
+  @@unique([name, fieldOfStudyId], map: "subjects_name_field_key")
+  @@index([fieldOfStudyId], map: "idx_subjects_field")
+  @@map("subjects")
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  roomCode    String   @unique @map("room_code") @db.VarChar(32)
+  displayName String   @map("display_name") @db.VarChar(120)
+
+  buildingId Int @map("building_id")
+  wingId     Int @map("wing_id")
+  floorId    Int @map("floor_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  wing     Wing     @relation(fields: [wingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  floor    Floor    @relation(fields: [floorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  scheduleEntries ScheduleEntry[]
+
+  @@index([buildingId], map: "idx_rooms_building")
+  @@index([wingId], map: "idx_rooms_wing")
+  @@index([floorId], map: "idx_rooms_floor")
   @@map("rooms")
 }
 
 model ScheduleEntry {
-  id           Int      @id @default(autoincrement())
-  roomId       Int      @map("room_id")
-  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  eventDate    DateTime @map("event_date") @db.Date
-  title        String
-  lecturer     String
-  groupName    String   @map("group_name")
-  classType    String   @map("class_type")
-  startTime    DateTime @map("start_time") @db.Time(6)
-  endTime      DateTime @map("end_time") @db.Time(6)
-  description  String
-  note         String?
-  fieldOfStudy String?  @map("field_of_study")
-  subjectCode  String?  @map("subject_code")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  eventDate DateTime @map("event_date") @db.Date
+
+  lecturerId     Int @map("lecturer_id")
+  studentGroupId Int @map("student_group_id")
+  classTypeId    Int @map("class_type_id")
+  subjectId      Int @map("subject_id")
+
+  title       String @db.VarChar(200)
+  startTime   DateTime @map("start_time") @db.Time(6)
+  endTime     DateTime @map("end_time") @db.Time(6)
+  description String
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  room         Room         @relation(fields: [roomId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lecturer     Lecturer     @relation(fields: [lecturerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  studentGroup StudentGroup @relation(fields: [studentGroupId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  classType    ClassType    @relation(fields: [classTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([roomId, eventDate, startTime], map: "idx_schedule_entries_room_day")
+  @@index([lecturerId], map: "idx_schedule_entries_lecturer")
+  @@index([studentGroupId], map: "idx_schedule_entries_group")
+  @@index([classTypeId], map: "idx_schedule_entries_class_type")
+  @@index([subjectId], map: "idx_schedule_entries_subject")
   @@map("schedule_entries")
 }

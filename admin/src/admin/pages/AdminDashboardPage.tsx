@@ -97,16 +97,21 @@ export function AdminDashboardPage(): JSX.Element {
           subtitle="Przejscia do sekcji CRUD"
           actions={<span className="text-xs text-[#8ca0c4]">Live DB</span>}
         >
-          <div className="grid gap-3 py-2 sm:grid-cols-2">
+          <div className="grid gap-3 py-2 sm:grid-cols-3">
             <QuickLinkCard
               title="Zarzadzaj salami"
-              text="Dodawaj, edytuj i usuwaj sale wraz z kontrola powiazan."
+              text="Dodawaj, edytuj i usuwaj sale z wyborami relacyjnymi (budynek, skrzydlo, pietro)."
               to="/rooms"
             />
             <QuickLinkCard
               title="Zarzadzaj harmonogramem"
-              text="Pelny CRUD wpisow zajec, relacje i filtrowanie po datach."
+              text="Pelny CRUD wpisow zajec oparty na slownikach i kontrolowanych listach."
               to="/schedule-entries"
+            />
+            <QuickLinkCard
+              title="Zarzadzaj slownikami"
+              text="Centralna edycja budynkow, grup, typow zajec, kierunkow i przedmiotow."
+              to="/references"
             />
           </div>
         </AdminPanel>

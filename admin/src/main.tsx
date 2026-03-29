@@ -6,6 +6,7 @@ import { AdminLayout } from './admin/components/AdminLayout';
 import { AdminProtectedRoute } from './admin/components/AdminProtectedRoute';
 import { AdminDashboardPage } from './admin/pages/AdminDashboardPage';
 import { AdminLoginPage } from './admin/pages/AdminLoginPage';
+import { AdminReferencesPage } from './admin/pages/AdminReferencesPage';
 import { AdminRoomsPage } from './admin/pages/AdminRoomsPage';
 import { AdminScheduleEntriesPage } from './admin/pages/AdminScheduleEntriesPage';
 import './index.css';
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="rooms" element={<AdminRoomsPage />} />
               <Route path="schedule-entries" element={<AdminScheduleEntriesPage />} />
+              <Route path="references" element={<AdminReferencesPage />} />
               <Route index element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>

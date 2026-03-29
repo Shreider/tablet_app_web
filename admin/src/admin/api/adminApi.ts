@@ -1,5 +1,8 @@
 import type {
   AdminDashboardResponse,
+  AdminReferenceDependency,
+  AdminReferenceEntity,
+  AdminReferencesDatasetResponse,
   AdminRoom,
   AdminRoomsOptionsResponse,
   AdminScheduleEntry,
@@ -104,8 +107,9 @@ export interface FetchAdminRoomsParams {
   page?: number;
   limit?: number;
   search?: string;
-  building?: string;
-  floorLabel?: string;
+  buildingId?: number | null;
+  wingId?: number | null;
+  floorId?: number | null;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -150,9 +154,9 @@ export const fetchAdminRoomDetails = async (
 export interface RoomFormPayload {
   roomCode: string;
   displayName: string;
-  building: string;
-  wing: string;
-  floorLabel: string;
+  buildingId: number;
+  wingId: number;
+  floorId: number;
 }
 
 export const createAdminRoom = async (
@@ -210,8 +214,10 @@ export interface FetchScheduleEntriesParams {
   limit?: number;
   search?: string;
   roomId?: number | null;
-  classType?: string;
-  lecturer?: string;
+  classTypeId?: number | null;
+  lecturerId?: number | null;
+  studentGroupId?: number | null;
+  subjectId?: number | null;
   dateFrom?: string;
   dateTo?: string;
   sortBy?: string;
@@ -223,7 +229,6 @@ export const fetchAdminScheduleEntries = async (
   params: FetchScheduleEntriesParams
 ): Promise<PaginatedResponse<AdminScheduleEntry>> => {
   const queryString = toQueryString(params as Record<string, string | number | undefined | null>);
-
   const response = await fetch(`${API_BASE_URL}/admin/schedule-entries${queryString}`, {
     headers: {
       ...buildAuthHeaders(token)
@@ -261,23 +266,19 @@ export const fetchAdminScheduleEntryDetails = async (
 export interface ScheduleEntryFormPayload {
   roomId: number;
   eventDate: string;
-  title: string;
-  lecturer: string;
-  groupName: string;
-  classType: string;
+  lecturerId: number;
+  studentGroupId: number;
+  classTypeId: number;
+  subjectId: number;
   startTime: string;
   endTime: string;
   description: string;
   note: string;
-  fieldOfStudy: string;
-  subjectCode: string;
 }
 
 const normalizeSchedulePayload = (payload: ScheduleEntryFormPayload) => ({
   ...payload,
-  note: payload.note.trim(),
-  fieldOfStudy: payload.fieldOfStudy.trim(),
-  subjectCode: payload.subjectCode.trim()
+  note: payload.note.trim() || null
 });
 
 export const createAdminScheduleEntry = async (
@@ -325,4 +326,82 @@ export const deleteAdminScheduleEntry = async (
   });
 
   return parseJsonResponse<{ deleted: boolean }>(response);
+};
+
+export const fetchAdminReferencesDataset = async (
+  token: string
+): Promise<AdminReferencesDatasetResponse> => {
+  const response = await fetch(`${API_BASE_URL}/admin/references`, {
+    headers: {
+      ...buildAuthHeaders(token)
+    }
+  });
+
+  return parseJsonResponse<AdminReferencesDatasetResponse>(response);
+};
+
+export const fetchAdminReferenceDependencies = async (
+  token: string,
+  entity: AdminReferenceEntity,
+  id: number
+): Promise<{ entity: AdminReferenceEntity; id: number; dependencies: AdminReferenceDependency[] }> => {
+  const response = await fetch(`${API_BASE_URL}/admin/references/${entity}/${id}/dependencies`, {
+    headers: {
+      ...buildAuthHeaders(token)
+    }
+  });
+
+  return parseJsonResponse<{ entity: AdminReferenceEntity; id: number; dependencies: AdminReferenceDependency[] }>(
+    response
+  );
+};
+
+export const createAdminReference = async (
+  token: string,
+  entity: AdminReferenceEntity,
+  payload: Record<string, unknown>
+): Promise<{ entity: AdminReferenceEntity; id: number }> => {
+  const response = await fetch(`${API_BASE_URL}/admin/references/${entity}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildAuthHeaders(token)
+    },
+    body: JSON.stringify(payload)
+  });
+
+  return parseJsonResponse<{ entity: AdminReferenceEntity; id: number }>(response);
+};
+
+export const updateAdminReference = async (
+  token: string,
+  entity: AdminReferenceEntity,
+  id: number,
+  payload: Record<string, unknown>
+): Promise<{ entity: AdminReferenceEntity; id: number }> => {
+  const response = await fetch(`${API_BASE_URL}/admin/references/${entity}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildAuthHeaders(token)
+    },
+    body: JSON.stringify(payload)
+  });
+
+  return parseJsonResponse<{ entity: AdminReferenceEntity; id: number }>(response);
+};
+
+export const deleteAdminReference = async (
+  token: string,
+  entity: AdminReferenceEntity,
+  id: number
+): Promise<{ entity: AdminReferenceEntity; deleted: boolean; id: number }> => {
+  const response = await fetch(`${API_BASE_URL}/admin/references/${entity}/${id}`, {
+    method: 'DELETE',
+    headers: {
+      ...buildAuthHeaders(token)
+    }
+  });
+
+  return parseJsonResponse<{ entity: AdminReferenceEntity; deleted: boolean; id: number }>(response);
 };

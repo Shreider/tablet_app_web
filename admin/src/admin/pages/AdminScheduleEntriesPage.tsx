@@ -42,16 +42,14 @@ const initialEntriesState: EntriesState = {
 const initialEntryForm: ScheduleEntryFormPayload = {
   roomId: 0,
   eventDate: '',
-  title: '',
-  lecturer: '',
-  groupName: '',
-  classType: '',
+  lecturerId: 0,
+  studentGroupId: 0,
+  classTypeId: 0,
+  subjectId: 0,
   startTime: '',
   endTime: '',
   description: '',
-  note: '',
-  fieldOfStudy: '',
-  subjectCode: ''
+  note: ''
 };
 
 export function AdminScheduleEntriesPage(): JSX.Element {
@@ -60,13 +58,19 @@ export function AdminScheduleEntriesPage(): JSX.Element {
   const [state, setState] = useState<EntriesState>(initialEntriesState);
   const [options, setOptions] = useState<AdminScheduleOptionsResponse>({
     rooms: [],
-    classTypes: []
+    lecturers: [],
+    studentGroups: [],
+    classTypes: [],
+    subjects: []
   });
 
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [roomId, setRoomId] = useState<number | null>(null);
-  const [classType, setClassType] = useState('');
+  const [classTypeId, setClassTypeId] = useState<number | null>(null);
+  const [lecturerId, setLecturerId] = useState<number | null>(null);
+  const [studentGroupId, setStudentGroupId] = useState<number | null>(null);
+  const [subjectId, setSubjectId] = useState<number | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortBy, setSortBy] = useState('eventDate');
@@ -110,7 +114,10 @@ export function AdminScheduleEntriesPage(): JSX.Element {
         limit: 12,
         search,
         roomId,
-        classType,
+        classTypeId,
+        lecturerId,
+        studentGroupId,
+        subjectId,
         dateFrom,
         dateTo,
         sortBy,
@@ -137,27 +144,47 @@ export function AdminScheduleEntriesPage(): JSX.Element {
     }
   };
 
-  useEffect(() => {
+  const loadOptions = async () => {
     if (!token) {
       return;
     }
 
-    const loadOptions = async () => {
-      try {
-        const payload = await fetchAdminScheduleOptions(token);
-        setOptions(payload);
-      } catch {
-        setOptions({ rooms: [], classTypes: [] });
-      }
-    };
+    try {
+      const payload = await fetchAdminScheduleOptions(token);
+      setOptions(payload);
+    } catch {
+      setOptions({
+        rooms: [],
+        lecturers: [],
+        studentGroups: [],
+        classTypes: [],
+        subjects: []
+      });
+    }
+  };
 
+  useEffect(() => {
     void loadOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
     void loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page, search, roomId, classType, dateFrom, dateTo, sortBy, sortOrder]);
+  }, [
+    token,
+    page,
+    search,
+    roomId,
+    classTypeId,
+    lecturerId,
+    studentGroupId,
+    subjectId,
+    dateFrom,
+    dateTo,
+    sortBy,
+    sortOrder
+  ]);
 
   useEffect(() => {
     if (!flashMessage) {
@@ -169,14 +196,20 @@ export function AdminScheduleEntriesPage(): JSX.Element {
   }, [flashMessage]);
 
   const openCreateForm = () => {
-    const defaultRoomId = options.rooms[0]?.id ?? 0;
-
     setFormMode('create');
     setEditingEntry(null);
     setFormError(null);
     setFormState({
-      ...initialEntryForm,
-      roomId: defaultRoomId
+      roomId: options.rooms[0]?.id ?? 0,
+      eventDate: '',
+      lecturerId: options.lecturers[0]?.id ?? 0,
+      studentGroupId: options.studentGroups[0]?.id ?? 0,
+      classTypeId: options.classTypes[0]?.id ?? 0,
+      subjectId: options.subjects[0]?.id ?? 0,
+      startTime: '',
+      endTime: '',
+      description: '',
+      note: ''
     });
     setFormOpen(true);
   };
@@ -188,16 +221,14 @@ export function AdminScheduleEntriesPage(): JSX.Element {
     setFormState({
       roomId: entry.roomId,
       eventDate: entry.eventDate,
-      title: entry.title,
-      lecturer: entry.lecturer,
-      groupName: entry.groupName,
-      classType: entry.classType,
+      lecturerId: entry.lecturerId,
+      studentGroupId: entry.studentGroupId,
+      classTypeId: entry.classTypeId,
+      subjectId: entry.subjectId,
       startTime: entry.startTime,
       endTime: entry.endTime,
       description: entry.description,
-      note: entry.note ?? '',
-      fieldOfStudy: entry.fieldOfStudy ?? '',
-      subjectCode: entry.subjectCode ?? ''
+      note: entry.note ?? ''
     });
     setFormOpen(true);
   };
@@ -205,13 +236,14 @@ export function AdminScheduleEntriesPage(): JSX.Element {
   const validateEntryForm = (payload: ScheduleEntryFormPayload): string | null => {
     if (!payload.roomId || payload.roomId <= 0) return 'Wybierz sale.';
     if (!payload.eventDate) return 'Podaj date zajec.';
-    if (!payload.title.trim()) return 'Podaj tytul zajec.';
-    if (!payload.lecturer.trim()) return 'Podaj prowadzacego.';
-    if (!payload.groupName.trim()) return 'Podaj grupe.';
-    if (!payload.classType.trim()) return 'Podaj typ zajec.';
+    if (!payload.lecturerId || payload.lecturerId <= 0) return 'Wybierz prowadzacego.';
+    if (!payload.studentGroupId || payload.studentGroupId <= 0) return 'Wybierz grupe.';
+    if (!payload.classTypeId || payload.classTypeId <= 0) return 'Wybierz typ zajec.';
+    if (!payload.subjectId || payload.subjectId <= 0) return 'Wybierz przedmiot.';
     if (!payload.startTime) return 'Podaj godzine rozpoczecia.';
     if (!payload.endTime) return 'Podaj godzine zakonczenia.';
-    if (payload.startTime >= payload.endTime) return 'Godzina rozpoczecia musi byc wczesniej niz zakonczenia.';
+    if (payload.startTime >= payload.endTime)
+      return 'Godzina rozpoczecia musi byc wczesniej niz zakonczenia.';
     if (!payload.description.trim()) return 'Podaj opis zajec.';
     return null;
   };
@@ -242,9 +274,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
       }
 
       setFormOpen(false);
-      await loadEntries();
-      const refreshedOptions = await fetchAdminScheduleOptions(token);
-      setOptions(refreshedOptions);
+      await Promise.all([loadEntries(), loadOptions()]);
     } catch (error) {
       const message =
         error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac wpisu harmonogramu.';
@@ -321,7 +351,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           </button>
         }
       >
-        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-8">
+        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-10">
           <label className="admin-field xl:col-span-2">
             <span className="admin-label">Wyszukiwarka</span>
             <div className="flex gap-2">
@@ -364,19 +394,76 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           </label>
 
           <label className="admin-field">
-            <span className="admin-label">Typ zajec</span>
+            <span className="admin-label">Prowadzacy</span>
             <select
               className="admin-input"
-              value={classType}
+              value={lecturerId ?? ''}
               onChange={(event) => {
                 setPage(1);
-                setClassType(event.target.value);
+                setLecturerId(event.target.value ? Number(event.target.value) : null);
+              }}
+            >
+              <option value="">Wszyscy</option>
+              {options.lecturers.map((lecturer) => (
+                <option key={lecturer.id} value={lecturer.id}>
+                  {lecturer.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-label">Grupa</span>
+            <select
+              className="admin-input"
+              value={studentGroupId ?? ''}
+              onChange={(event) => {
+                setPage(1);
+                setStudentGroupId(event.target.value ? Number(event.target.value) : null);
               }}
             >
               <option value="">Wszystkie</option>
-              {options.classTypes.map((value) => (
-                <option key={value} value={value}>
-                  {value}
+              {options.studentGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-label">Typ zajec</span>
+            <select
+              className="admin-input"
+              value={classTypeId ?? ''}
+              onChange={(event) => {
+                setPage(1);
+                setClassTypeId(event.target.value ? Number(event.target.value) : null);
+              }}
+            >
+              <option value="">Wszystkie</option>
+              {options.classTypes.map((classType) => (
+                <option key={classType.id} value={classType.id}>
+                  {classType.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-label">Przedmiot</span>
+            <select
+              className="admin-input"
+              value={subjectId ?? ''}
+              onChange={(event) => {
+                setPage(1);
+                setSubjectId(event.target.value ? Number(event.target.value) : null);
+              }}
+            >
+              <option value="">Wszystkie</option>
+              {options.subjects.map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.code} - {subject.name}
                 </option>
               ))}
             </select>
@@ -420,9 +507,11 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             >
               <option value="eventDate">Data</option>
               <option value="startTime">Godzina startu</option>
-              <option value="title">Tytul</option>
-              <option value="lecturer">Prowadzacy</option>
+              <option value="endTime">Godzina konca</option>
               <option value="roomCode">Sala</option>
+              <option value="lecturerName">Prowadzacy</option>
+              <option value="classTypeName">Typ zajec</option>
+              <option value="subjectCode">Kod przedmiotu</option>
               <option value="createdAt">Utworzono</option>
             </select>
           </label>
@@ -472,6 +561,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                     <th>Prowadzacy</th>
                     <th>Typ</th>
                     <th>Grupa</th>
+                    <th>Przedmiot</th>
                     <th>Akcje</th>
                   </tr>
                 </thead>
@@ -484,9 +574,10 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                       </td>
                       <td>{entry.roomCode}</td>
                       <td>{entry.title}</td>
-                      <td>{entry.lecturer}</td>
-                      <td>{entry.classType}</td>
-                      <td>{entry.groupName}</td>
+                      <td>{entry.lecturerName}</td>
+                      <td>{entry.classTypeName}</td>
+                      <td>{entry.studentGroupName}</td>
+                      <td>{entry.subjectCode}</td>
                       <td>
                         <div className="flex flex-wrap gap-1">
                           <button
@@ -532,7 +623,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             ? 'Dodaj wpis harmonogramu'
             : `Edytuj wpis #${editingEntry?.id ?? ''}`
         }
-        message="Uzupelnij dane i zapisz rekord w bazie."
+        message="Wszystkie pola relacyjne wybieraj z list predefiniowanych."
         confirmLabel={formMode === 'create' ? 'Dodaj wpis' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
@@ -580,55 +671,87 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             </label>
           </div>
 
-          <label className="admin-field">
-            <span className="admin-label">Tytul</span>
-            <input
-              className="admin-input"
-              value={formState.title}
-              onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))}
-              required
-            />
-          </label>
-
           <div className="grid gap-3 md:grid-cols-2">
             <label className="admin-field">
               <span className="admin-label">Prowadzacy</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.lecturer}
+                value={formState.lecturerId}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, lecturer: event.target.value }))
+                  setFormState((prev) => ({ ...prev, lecturerId: Number(event.target.value) }))
                 }
                 required
-              />
+              >
+                <option value={0}>Wybierz prowadzacego</option>
+                {options.lecturers.map((lecturer) => (
+                  <option key={lecturer.id} value={lecturer.id}>
+                    {lecturer.name}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="admin-field">
               <span className="admin-label">Grupa</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.groupName}
+                value={formState.studentGroupId}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, groupName: event.target.value }))
+                  setFormState((prev) => ({ ...prev, studentGroupId: Number(event.target.value) }))
                 }
                 required
-              />
+              >
+                <option value={0}>Wybierz grupe</option>
+                {options.studentGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
             <label className="admin-field">
               <span className="admin-label">Typ zajec</span>
-              <input
+              <select
                 className="admin-input"
-                value={formState.classType}
+                value={formState.classTypeId}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, classType: event.target.value }))
+                  setFormState((prev) => ({ ...prev, classTypeId: Number(event.target.value) }))
                 }
                 required
-              />
+              >
+                <option value={0}>Wybierz typ zajec</option>
+                {options.classTypes.map((classType) => (
+                  <option key={classType.id} value={classType.id}>
+                    {classType.name}
+                  </option>
+                ))}
+              </select>
             </label>
 
+            <label className="admin-field md:col-span-2">
+              <span className="admin-label">Przedmiot</span>
+              <select
+                className="admin-input"
+                value={formState.subjectId}
+                onChange={(event) =>
+                  setFormState((prev) => ({ ...prev, subjectId: Number(event.target.value) }))
+                }
+                required
+              >
+                <option value={0}>Wybierz przedmiot</option>
+                {options.subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.code} - {subject.name} ({subject.fieldOfStudyName})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
             <label className="admin-field">
               <span className="admin-label">Start</span>
               <input
@@ -668,36 +791,14 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             />
           </label>
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="admin-field">
-              <span className="admin-label">Notatka (opcjonalnie)</span>
-              <input
-                className="admin-input"
-                value={formState.note}
-                onChange={(event) => setFormState((prev) => ({ ...prev, note: event.target.value }))}
-              />
-            </label>
-            <label className="admin-field">
-              <span className="admin-label">Kierunek (opcjonalnie)</span>
-              <input
-                className="admin-input"
-                value={formState.fieldOfStudy}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, fieldOfStudy: event.target.value }))
-                }
-              />
-            </label>
-            <label className="admin-field">
-              <span className="admin-label">Kod przedmiotu (opcjonalnie)</span>
-              <input
-                className="admin-input"
-                value={formState.subjectCode}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, subjectCode: event.target.value }))
-                }
-              />
-            </label>
-          </div>
+          <label className="admin-field">
+            <span className="admin-label">Notatka (opcjonalnie)</span>
+            <input
+              className="admin-input"
+              value={formState.note}
+              onChange={(event) => setFormState((prev) => ({ ...prev, note: event.target.value }))}
+            />
+          </label>
 
           {formError ? (
             <p className="m-0 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
@@ -722,18 +823,44 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           <ErrorBlock title="Blad szczegolow" message={detailsState.error} />
         ) : detailsState.entry ? (
           <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
-            <p className="m-0">Sala: <strong>{detailsState.entry.roomCode} - {detailsState.entry.roomDisplayName}</strong></p>
-            <p className="m-0">Data: <strong>{detailsState.entry.eventDate}</strong></p>
-            <p className="m-0">Godziny: <strong>{detailsState.entry.startTime}-{detailsState.entry.endTime}</strong></p>
-            <p className="m-0">Typ: <strong>{detailsState.entry.classType}</strong></p>
-            <p className="m-0">Prowadzacy: <strong>{detailsState.entry.lecturer}</strong></p>
-            <p className="m-0">Grupa: <strong>{detailsState.entry.groupName}</strong></p>
-            <p className="m-0 md:col-span-2">Tytul: <strong>{detailsState.entry.title}</strong></p>
-            <p className="m-0 md:col-span-2">Opis: <strong>{detailsState.entry.description}</strong></p>
-            {detailsState.entry.note ? <p className="m-0 md:col-span-2">Notatka: <strong>{detailsState.entry.note}</strong></p> : null}
-            {detailsState.entry.fieldOfStudy ? <p className="m-0">Kierunek: <strong>{detailsState.entry.fieldOfStudy}</strong></p> : null}
-            {detailsState.entry.subjectCode ? <p className="m-0">Kod przedmiotu: <strong>{detailsState.entry.subjectCode}</strong></p> : null}
-            <p className="m-0 md:col-span-2">Utworzono: <strong>{formatDateTime(detailsState.entry.createdAt)}</strong></p>
+            <p className="m-0">
+              Sala: <strong>{detailsState.entry.roomCode} - {detailsState.entry.roomDisplayName}</strong>
+            </p>
+            <p className="m-0">
+              Data: <strong>{detailsState.entry.eventDate}</strong>
+            </p>
+            <p className="m-0">
+              Godziny: <strong>{detailsState.entry.startTime}-{detailsState.entry.endTime}</strong>
+            </p>
+            <p className="m-0">
+              Typ: <strong>{detailsState.entry.classTypeName}</strong>
+            </p>
+            <p className="m-0">
+              Prowadzacy: <strong>{detailsState.entry.lecturerName}</strong>
+            </p>
+            <p className="m-0">
+              Grupa: <strong>{detailsState.entry.studentGroupName}</strong>
+            </p>
+            <p className="m-0">
+              Przedmiot: <strong>{detailsState.entry.subjectCode} - {detailsState.entry.subjectName}</strong>
+            </p>
+            <p className="m-0">
+              Kierunek: <strong>{detailsState.entry.fieldOfStudyName}</strong>
+            </p>
+            <p className="m-0 md:col-span-2">
+              Tytul: <strong>{detailsState.entry.title}</strong>
+            </p>
+            <p className="m-0 md:col-span-2">
+              Opis: <strong>{detailsState.entry.description}</strong>
+            </p>
+            {detailsState.entry.note ? (
+              <p className="m-0 md:col-span-2">
+                Notatka: <strong>{detailsState.entry.note}</strong>
+              </p>
+            ) : null}
+            <p className="m-0 md:col-span-2">
+              Utworzono: <strong>{formatDateTime(detailsState.entry.createdAt)}</strong>
+            </p>
           </div>
         ) : null}
       </ConfirmModal>

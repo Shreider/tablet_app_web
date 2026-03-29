@@ -29,16 +29,16 @@ export const resolveStatus = (
 interface RoomMetadataSource {
   room_code: string;
   display_name: string;
-  building: string;
-  wing: string;
+  building_name: string;
+  wing_name: string;
   floor_label: string;
 }
 
 export const mapRoomMetadata = (roomRow: RoomMetadataSource) => ({
   roomId: roomRow.room_code,
   name: roomRow.display_name,
-  building: roomRow.building,
-  wing: roomRow.wing,
+  building: roomRow.building_name,
+  wing: roomRow.wing_name,
   floor: roomRow.floor_label
 });
 
@@ -55,16 +55,17 @@ export const mapEntryToLectureEvent = (
     id: `lec-${entry.id}`,
     title: entry.title,
     room: roomCode,
-    lecturer: entry.lecturer,
+    lecturer: entry.lecturer_name,
     group: entry.group_name,
-    type: entry.class_type,
+    type: entry.class_type_name,
     startTime,
     endTime,
     description: entry.description,
     note: entry.note ?? undefined,
     status,
     isCurrent: status === 'current',
-    fieldOfStudy: entry.field_of_study ?? undefined,
-    subjectCode: entry.subject_code ?? undefined
+    fieldOfStudy: entry.field_of_study_name,
+    subjectCode: entry.subject_code,
+    subject: entry.subject_name
   };
 };

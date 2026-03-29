@@ -77,6 +77,37 @@ export const fetchRecentScheduleEntries = async (
           roomCode: true,
           displayName: true
         }
+      },
+      lecturer: {
+        select: {
+          id: true,
+          fullName: true
+        }
+      },
+      studentGroup: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      classType: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      subject: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          fieldOfStudy: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
       }
     }
   });
@@ -88,15 +119,21 @@ export const fetchRecentScheduleEntries = async (
     display_name: entry.room.displayName,
     event_date: formatDateOnly(entry.eventDate),
     title: entry.title,
-    lecturer: entry.lecturer,
-    group_name: entry.groupName,
-    class_type: entry.classType,
+    lecturer_id: entry.lecturerId,
+    lecturer_name: entry.lecturer.fullName,
+    group_id: entry.studentGroupId,
+    group_name: entry.studentGroup.name,
+    class_type_id: entry.classTypeId,
+    class_type_name: entry.classType.name,
+    subject_id: entry.subjectId,
+    subject_code: entry.subject.code,
+    subject_name: entry.subject.name,
+    field_of_study_id: entry.subject.fieldOfStudy.id,
+    field_of_study_name: entry.subject.fieldOfStudy.name,
     start_time: formatTimeValue(entry.startTime),
     end_time: formatTimeValue(entry.endTime),
     description: entry.description,
     note: entry.note,
-    field_of_study: entry.fieldOfStudy,
-    subject_code: entry.subjectCode,
     created_at: entry.createdAt
   }));
 };

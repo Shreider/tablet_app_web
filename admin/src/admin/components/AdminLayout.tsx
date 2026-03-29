@@ -5,7 +5,8 @@ import { useAdminAuth } from '../auth/AdminAuthContext';
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/rooms', label: 'Sale' },
-  { to: '/schedule-entries', label: 'Harmonogram' }
+  { to: '/schedule-entries', label: 'Harmonogram' },
+  { to: '/references', label: 'Slowniki' }
 ];
 
 const resolvePageTitle = (pathname: string): string => {
@@ -15,6 +16,10 @@ const resolvePageTitle = (pathname: string): string => {
 
   if (pathname.startsWith('/schedule-entries')) {
     return 'Zarzadzanie harmonogramem';
+  }
+
+  if (pathname.startsWith('/references')) {
+    return 'Zarzadzanie slownikami i relacjami';
   }
 
   return 'Dashboard administracyjny';
