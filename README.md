@@ -1,23 +1,28 @@
 # Room Tablet Preview
 
-Prototyp webowej aplikacji salowej w architekturze:
-- `frontend` (React + Vite + Tailwind),
-- `backend` (Node.js + Express),
-- `database` (PostgreSQL).
+Aplikacja webowa w architekturze:
+- `frontend` (React + Vite + Tailwind, aplikacja użytkowa),
+- `admin` (React + Vite + Tailwind, osobny panel administracyjny),
+- `backend` (Node.js + Express + TypeScript),
+- `database` (PostgreSQL),
+- `Prisma` (schema, migracje, Prisma Client).
 
-## Docelowy przeplyw danych
+## Model danych i Prisma
 
-Aplikacja dziala w modelu **DB-first**:
-- frontend pobiera dane tylko z backendu (`/api/*`),
-- backend pobiera dane tylko z PostgreSQL,
-- runtime nie korzysta z lokalnych danych testowych jako zrodla danych.
+Model bazy jest utrzymywany przez Prisma:
+- schema: `backend/prisma/schema.prisma`,
+- migracje: `backend/prisma/migrations/*`,
+- klient: `@prisma/client`.
 
-Dane startowe istnieja wyłącznie w seedzie i sluza tylko do wypelnienia bazy.
+Główne encje:
+- `Room` (`rooms`),
+- `ScheduleEntry` (`schedule_entries`) z relacją `Room 1:N ScheduleEntry`.
 
 ## Endpointy API
 
-Wszystkie endpointy backendu sa dostepne wyłącznie pod prefiksem `/api`.
+Wszystkie endpointy backendu są pod `/api`.
 
+Publiczne:
 - `GET /api/health`
 - `GET /api/rooms`
 - `GET /api/room/:roomId`
@@ -25,51 +30,45 @@ Wszystkie endpointy backendu sa dostepne wyłącznie pod prefiksem `/api`.
 - `GET /api/schedule?roomId=<id>`
 - `GET /api/schedule?date=YYYY-MM-DD`
 
-Przyklady:
-- `http://localhost:3001/api/rooms`
-- `http://localhost:3001/api/room/30`
-- `http://localhost:3001/api/schedule?roomId=A12`
+Admin (`/api/admin/*`):
+- `POST /api/admin/auth/login`
+- `GET /api/admin/auth/session`
+- `GET /api/admin/dashboard`
+- `GET /api/admin/rooms`
+- `GET /api/admin/rooms/options`
+- `GET /api/admin/rooms/:id`
+- `POST /api/admin/rooms`
+- `PUT /api/admin/rooms/:id`
+- `DELETE /api/admin/rooms/:id`
+- `GET /api/admin/schedule-entries`
+- `GET /api/admin/schedule-entries/options`
+- `GET /api/admin/schedule-entries/:id`
+- `POST /api/admin/schedule-entries`
+- `PUT /api/admin/schedule-entries/:id`
+- `DELETE /api/admin/schedule-entries/:id`
 
-Legacy trasy poza `/api` (np. `/health`, `/room/...`, `/rooms`) sa wylaczone.
+## Routing i porty
 
-## Frontend routing
+- Frontend użytkowy: `http://localhost:5173`
+- Panel admina: `http://localhost:5174`
+- Backend API: `http://localhost:3001`
+- Database: brak publikacji portu na hosta (dostęp tylko z backendu w sieci Dockera)
+- Widok sali (frontend): `/room/:roomId`
+- Admin app (osobna aplikacja): `/login`, `/dashboard`, `/rooms`, `/schedule-entries`
 
-Frontend zachowuje routing widokow:
-- `/room/:roomId`
+## Separacja sieciowa
 
-Przyklady:
-- `http://localhost:5173/room/30`
-- `http://192.168.255.2:5173/room/A12`
+`docker-compose` używa dwóch sieci:
+- `public_net`: `frontend`, `admin`, `backend`
+- `data_net` (`internal: true`): `backend`, `database`
 
-Strona glowna `/` pobiera liste sal z `/api/rooms` i przekierowuje do pierwszej sali z bazy.
+Dzięki temu tylko `backend` ma dostęp do `database`.
 
-## Baza danych
+## Autoryzacja admina
 
-Główne tabele:
-- `rooms`
-- `schedule_entries`
-
-Konta bazy danych:
-- `admin` - konto administracyjne (tworzenie schematu, migracje, seed),
-- `web_app` - konto runtime dla backendu API (odczyt danych).
-
-Schema jest utrzymywana przez:
-- `database/init/001_schema.sql` (inicjalizacja kontenera DB),
-- `npm run db:migrate` (idempotentne dopiecie schematu po stronie backendu).
-
-## Seed
-
-Seed danych testowych:
-- sale: `30`, `31`, `101`, `205`, `A12`,
-- rozne harmonogramy, prowadzacy, grupy, godziny i statusy dnia.
-
-Uruchomienie seedu:
-
-```bash
-docker compose exec -T backend npm run db:seed
-```
-
-Seed jest powtarzalny (czysci i wypelnia dane od nowa).
+Panel admina (aplikacja na porcie 5174) i endpointy `/api/admin` są zabezpieczone tokenem:
+- nagłówek: `Authorization: Bearer <ADMIN_TOKEN>`
+- token konfigurowany przez `ADMIN_TOKEN` w backendzie.
 
 ## Uruchomienie
 
@@ -77,50 +76,38 @@ Wymagania:
 - Docker
 - Docker Compose
 
-Start projektu:
+Start:
 
 ```bash
 docker compose up -d --build
 ```
 
-Przy pierwszym uruchomieniu po zmianie kont DB wykonaj reset wolumenu:
-
-```bash
-docker compose down -v
-docker compose up -d --build
-```
-
-Domyslne hasla:
-- `admin` / `admin_password`
-- `web_app` / `web_app_password`
-
-Migracje schematu:
-
-```bash
-docker compose exec -T backend npm run db:migrate
-```
-
-Seed danych:
+Przy pierwszym uruchomieniu:
+- backend uruchamia migracje Prisma (`npm run db:migrate`),
+- opcjonalny seed:
 
 ```bash
 docker compose exec -T backend npm run db:seed
 ```
 
-Zatrzymanie:
+Stop:
 
 ```bash
 docker compose down
 ```
 
-Zatrzymanie z resetem wolumenu bazy:
+Reset wolumenu DB:
 
 ```bash
 docker compose down -v
 ```
 
-## Konfiguracja sieci i CORS
+## Konfiguracja środowiska
 
-- backend nasluchuje na `0.0.0.0:3001`,
-- frontend na `0.0.0.0:5173`,
-- CORS dopuszcza `http://localhost:5173` i `http://192.168.255.2:5173`,
-- frontend komunikuje sie z backendem przez `/api` (proxy Vite).
+Domyślne zmienne w `docker-compose.yml`:
+- `DATABASE_URL` (runtime read-only: `web_app`),
+- `DATABASE_ADMIN_URL` (operacje administracyjne / migracje),
+- `ADMIN_TOKEN`,
+- `APP_TIMEZONE`,
+- `CORS_ORIGIN`,
+- `VITE_PUBLIC_APP_BASE_URL` (w usłudze `admin`, link do aplikacji użytkowej).

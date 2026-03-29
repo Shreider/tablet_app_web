@@ -1,47 +1,38 @@
-# Database (PostgreSQL)
+# Database (PostgreSQL + Prisma)
 
-Baza danych jest glownym zrodlem prawdy dla aplikacji runtime.
+Baza danych jest głównym źródłem prawdy dla aplikacji.
 
-## Konta i uprawnienia
+## Prisma
 
-- `admin` - konto administracyjne, uzywane do inicjalizacji DB, migracji i seedu.
-- `web_app` - konto runtime backendu API, z uprawnieniami odczytu danych.
+Schemat i migracje są utrzymywane przez Prisma:
+- schema: `backend/prisma/schema.prisma`
+- migracje: `backend/prisma/migrations/*`
 
-## Model danych
-
-- `rooms` - metadane sal,
-- `schedule_entries` - harmonogram zajec dla sal.
-
-Pola w `schedule_entries` przechowuja m.in.:
-- tytul zajec,
-- prowadzacego,
-- grupe,
-- date i godziny,
-- opis, notatke,
-- dodatkowe metadane (kierunek/subject code).
-
-## Schema / migracje
-
-Schema jest utrzymywana przez:
-- `database/init/001_schema.sql` (inicjalizacja kontenera DB),
-- `npm run db:migrate` (idempotentne dopiecie schematu po stronie backendu).
-
-Uruchomienie migracji:
+Migracje uruchamiane są poleceniem:
 
 ```bash
 docker compose exec -T backend npm run db:migrate
 ```
 
-## Seed danych
+## Konta i uprawnienia
 
-Seed jest jedynym miejscem, gdzie trzymane sa dane dane startowe.
-Runtime backendu i frontendu nie korzysta z plikow danych startowych jako zrodla danych.
+- `admin` - konto administracyjne (migracje Prisma, seed, operacje zapisu panelu admin),
+- `web_app` - konto runtime publicznego API (odczyt).
 
-Uruchomienie seedu:
+Role są przygotowywane przez pliki init w `database/init`.
+
+## Encje
+
+- `Room` (`rooms`) - metadane sal,
+- `ScheduleEntry` (`schedule_entries`) - harmonogram zajęć,
+- relacja: `rooms (1) -> (N) schedule_entries`.
+
+## Seed
+
+Seed danych testowych zgodny z Prisma:
 
 ```bash
 docker compose exec -T backend npm run db:seed
 ```
 
-Seed jest powtarzalny i przygotowuje dane dla sal:
-- `30`, `31`, `101`, `205`, `A12`.
+Seed czyści i odtwarza dane testowe.

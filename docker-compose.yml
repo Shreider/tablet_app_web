@@ -12,6 +12,49 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - public_net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5173').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  admin:
+    container_name: room-tablet-admin
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_API_BASE_URL=/api
+      - VITE_PROXY_TARGET=http://backend:3001
+      - VITE_PUBLIC_APP_BASE_URL=http://localhost:5173
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - public_net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5174').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   backend:
     container_name: room-tablet-backend
@@ -24,11 +67,15 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://web_app:web_app_password@database:5432/tablet_schedule
       - DATABASE_ADMIN_URL=postgresql://admin:admin_password@database:5432/tablet_schedule
+      - ADMIN_TOKEN=change-me-admin-token
       - APP_TIMEZONE=Europe/Warsaw
-      - CORS_ORIGIN=http://localhost:5173,http://192.168.255.2:5173
+      - CORS_ORIGIN=http://localhost:5173,http://localhost:5174,http://192.168.255.2:5173,http://192.168.255.2:5174
     depends_on:
       database:
         condition: service_healthy
+    networks:
+      - public_net
+      - data_net
     healthcheck:
       test:
         [
@@ -45,8 +92,6 @@ services:
   database:
     container_name: room-tablet-db
     image: postgres:16-alpine
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_DB=tablet_schedule
       - POSTGRES_USER=admin
@@ -54,6 +99,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - data_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d tablet_schedule"]
       interval: 10s
@@ -63,3 +110,10 @@ services:
 
 volumes:
   postgres-data:
+
+networks:
+  public_net:
+    name: room-tablet-public-net
+  data_net:
+    name: room-tablet-data-net
+    internal: true

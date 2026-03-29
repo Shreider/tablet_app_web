@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id              Int             @id @default(autoincrement())
+  roomCode        String          @unique @map("room_code") @db.VarChar(32)
+  displayName     String          @map("display_name")
+  building        String
+  wing            String
+  floorLabel      String          @map("floor_label")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  scheduleEntries ScheduleEntry[]
+
+  @@map("rooms")
+}
+
+model ScheduleEntry {
+  id           Int      @id @default(autoincrement())
+  roomId       Int      @map("room_id")
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  eventDate    DateTime @map("event_date") @db.Date
+  title        String
+  lecturer     String
+  groupName    String   @map("group_name")
+  classType    String   @map("class_type")
+  startTime    DateTime @map("start_time") @db.Time(6)
+  endTime      DateTime @map("end_time") @db.Time(6)
+  description  String
+  note         String?
+  fieldOfStudy String?  @map("field_of_study")
+  subjectCode  String?  @map("subject_code")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([roomId, eventDate, startTime], map: "idx_schedule_entries_room_day")
+  @@map("schedule_entries")
+}

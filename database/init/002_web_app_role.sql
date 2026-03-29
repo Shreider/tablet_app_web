@@ -11,8 +11,3 @@ $$;
 
 GRANT CONNECT ON DATABASE tablet_schedule TO web_app;
 GRANT USAGE ON SCHEMA public TO web_app;
-GRANT SELECT ON TABLE rooms TO web_app;
-GRANT SELECT ON TABLE schedule_entries TO web_app;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT ON TABLES TO web_app;
