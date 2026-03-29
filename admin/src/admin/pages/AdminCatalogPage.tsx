@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   AdminApiError,
   createAdminReference,
@@ -8,6 +9,13 @@ import {
   updateAdminReference
 } from '../api/adminApi';
 import { useAdminAuth } from '../auth/AdminAuthContext';
+import {
+  adminEntityKeysBySection,
+  adminEntityMetaByKey,
+  resolveEntityForSection,
+  sectionLabelMap,
+  type AdminEntitySection
+} from '../config/adminNavigation';
 import {
   AdminPanel,
   ConfirmModal,
@@ -22,6 +30,10 @@ import type {
   AdminReferenceEntity,
   AdminReferencesDatasetResponse
 } from '../types';
+
+interface AdminCatalogPageProps {
+  section: AdminEntitySection;
+}
 
 interface DatasetState {
   loading: boolean;
@@ -48,17 +60,6 @@ interface DeleteState {
   dependencies: AdminReferenceDependency[];
 }
 
-const ENTITY_ORDER: Array<{ key: AdminReferenceEntity; label: string; description: string }> = [
-  { key: 'buildings', label: 'Budynki', description: 'Slownik budynkow' },
-  { key: 'wings', label: 'Skrzydla', description: 'Podzial budynkow na strefy' },
-  { key: 'floors', label: 'Pietra', description: 'Slownik pieter i kolejnosci' },
-  { key: 'lecturers', label: 'Wykladowcy', description: 'Prowadzacy zajecia' },
-  { key: 'student-groups', label: 'Grupy', description: 'Grupy studentow' },
-  { key: 'class-types', label: 'Typy zajec', description: 'Wyklad, cwiczenia, laboratorium...' },
-  { key: 'fields-of-study', label: 'Kierunki', description: 'Pola/kierunki studiow' },
-  { key: 'subjects', label: 'Przedmioty', description: 'Kody i nazwy przedmiotow' }
-];
-
 const initialFormState: ReferenceFormState = {
   name: '',
   isActive: true,
@@ -74,17 +75,6 @@ const initialDatasetState: DatasetState = {
   loading: true,
   error: null,
   data: null
-};
-
-const entityTitleMap: Record<AdminReferenceEntity, string> = {
-  buildings: 'buildings',
-  wings: 'wings',
-  floors: 'floors',
-  lecturers: 'lecturers',
-  'student-groups': 'student_groups',
-  'class-types': 'class_types',
-  'fields-of-study': 'fields_of_study',
-  subjects: 'subjects'
 };
 
 const getDatasetCount = (data: AdminReferencesDatasetResponse, entity: AdminReferenceEntity): number => {
@@ -110,11 +100,19 @@ const getDatasetCount = (data: AdminReferencesDatasetResponse, entity: AdminRefe
   }
 };
 
-export function AdminReferencesPage(): JSX.Element {
+export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Element {
   const { token } = useAdminAuth();
+  const { entity } = useParams<{ entity: string }>();
+
+  const sectionEntities = adminEntityKeysBySection[section];
+  const selectedEntity = resolveEntityForSection(section, entity);
+  const defaultEntity = sectionEntities[0];
+
+  if (!selectedEntity) {
+    return <Navigate to={adminEntityMetaByKey[defaultEntity].route} replace />;
+  }
 
   const [state, setState] = useState<DatasetState>(initialDatasetState);
-  const [selectedEntity, setSelectedEntity] = useState<AdminReferenceEntity>('buildings');
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -144,7 +142,7 @@ export function AdminReferencesPage(): JSX.Element {
         data: payload
       });
     } catch (error) {
-      const message = error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac slownikow.';
+      const message = error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac danych sekcji.';
       setState({
         loading: false,
         error: message,
@@ -166,6 +164,13 @@ export function AdminReferencesPage(): JSX.Element {
     const timeout = window.setTimeout(() => setFlashMessage(null), 3000);
     return () => window.clearTimeout(timeout);
   }, [flashMessage]);
+
+  useEffect(() => {
+    setFormOpen(false);
+    setDeleteState(null);
+    setDeleteError(null);
+    setFormError(null);
+  }, [selectedEntity]);
 
   const selectedRows = useMemo(() => {
     if (!state.data) {
@@ -198,6 +203,8 @@ export function AdminReferencesPage(): JSX.Element {
     () => selectedRows.filter((row) => Boolean((row as { isActive?: boolean }).isActive)).length,
     [selectedRows]
   );
+
+  const currentMeta = adminEntityMetaByKey[selectedEntity];
 
   const openCreateForm = () => {
     const defaultBuildingId = state.data?.buildings[0]?.id ?? 0;
@@ -232,10 +239,10 @@ export function AdminReferencesPage(): JSX.Element {
   };
 
   const resolvePayloadForEntity = (
-    entity: AdminReferenceEntity,
+    entityKey: AdminReferenceEntity,
     data: ReferenceFormState
   ): Record<string, unknown> => {
-    switch (entity) {
+    switch (entityKey) {
       case 'buildings':
         return { name: data.name.trim(), isActive: data.isActive };
       case 'wings':
@@ -266,31 +273,37 @@ export function AdminReferencesPage(): JSX.Element {
     }
   };
 
-  const validateReferenceForm = (entity: AdminReferenceEntity, data: ReferenceFormState): string | null => {
-    if (entity === 'buildings' || entity === 'wings' || entity === 'student-groups' || entity === 'class-types' || entity === 'fields-of-study') {
+  const validateReferenceForm = (entityKey: AdminReferenceEntity, data: ReferenceFormState): string | null => {
+    if (
+      entityKey === 'buildings' ||
+      entityKey === 'wings' ||
+      entityKey === 'student-groups' ||
+      entityKey === 'class-types' ||
+      entityKey === 'fields-of-study'
+    ) {
       if (!data.name.trim()) {
         return 'Pole nazwa jest wymagane.';
       }
     }
 
-    if (entity === 'lecturers' && !data.fullName.trim()) {
+    if (entityKey === 'lecturers' && !data.fullName.trim()) {
       return 'Pole imie i nazwisko jest wymagane.';
     }
 
-    if (entity === 'wings' && (!data.buildingId || data.buildingId <= 0)) {
+    if (entityKey === 'wings' && (!data.buildingId || data.buildingId <= 0)) {
       return 'Wybierz budynek.';
     }
 
-    if (entity === 'floors') {
+    if (entityKey === 'floors') {
       if (!data.label.trim()) {
         return 'Pole etykieta pietra jest wymagane.';
       }
       if (!Number.isInteger(Number(data.sortOrder))) {
-        return 'Sort order musi byc liczba calkowita.';
+        return 'Kolejnosc wyswietlania musi byc liczba calkowita.';
       }
     }
 
-    if (entity === 'subjects') {
+    if (entityKey === 'subjects') {
       if (!data.code.trim()) return 'Pole kod jest wymagane.';
       if (!data.name.trim()) return 'Pole nazwa jest wymagane.';
       if (!data.fieldOfStudyId || data.fieldOfStudyId <= 0) return 'Wybierz kierunek.';
@@ -320,17 +333,17 @@ export function AdminReferencesPage(): JSX.Element {
     try {
       if (formMode === 'create') {
         await createAdminReference(token, selectedEntity, payload);
-        setFlashMessage('Dodano rekord slownikowy.');
+        setFlashMessage(`Dodano nowa pozycje: ${currentMeta.label}.`);
       } else if (editingId) {
         await updateAdminReference(token, selectedEntity, editingId, payload);
-        setFlashMessage('Zaktualizowano rekord slownikowy.');
+        setFlashMessage(`Zapisano zmiany w sekcji: ${currentMeta.label}.`);
       }
 
       setFormOpen(false);
       await loadDataset();
     } catch (error) {
       setFormError(
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac rekordu slownikowego.'
+        error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac danych.'
       );
     } finally {
       setFormBusy(false);
@@ -342,20 +355,20 @@ export function AdminReferencesPage(): JSX.Element {
       return;
     }
 
-    const entity = selectedEntity;
+    const entityKey = selectedEntity;
     const id = Number(row.id);
     const label =
-      entity === 'lecturers'
+      entityKey === 'lecturers'
         ? String(row.fullName ?? id)
-        : entity === 'floors'
+        : entityKey === 'floors'
           ? String(row.label ?? id)
-          : entity === 'subjects'
+          : entityKey === 'subjects'
             ? `${String(row.code ?? '')} - ${String(row.name ?? id)}`
             : String(row.name ?? id);
 
     setDeleteError(null);
     setDeleteState({
-      entity,
+      entity: entityKey,
       id,
       label,
       checkingDependencies: true,
@@ -363,9 +376,9 @@ export function AdminReferencesPage(): JSX.Element {
     });
 
     try {
-      const response = await fetchAdminReferenceDependencies(token, entity, id);
+      const response = await fetchAdminReferenceDependencies(token, entityKey, id);
       setDeleteState({
-        entity,
+        entity: entityKey,
         id,
         label,
         checkingDependencies: false,
@@ -396,7 +409,7 @@ export function AdminReferencesPage(): JSX.Element {
     try {
       await deleteAdminReference(token, deleteState.entity, deleteState.id);
       setDeleteState(null);
-      setFlashMessage('Usunieto rekord slownikowy.');
+      setFlashMessage(`Usunieto pozycje z sekcji: ${currentMeta.label}.`);
       await loadDataset();
     } catch (error) {
       const apiMessage = error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac rekordu.';
@@ -406,17 +419,15 @@ export function AdminReferencesPage(): JSX.Element {
     }
   };
 
-  const currentMeta = ENTITY_ORDER.find((item) => item.key === selectedEntity) ?? ENTITY_ORDER[0];
-
   if (state.loading) {
-    return <LoadingBlock message="Ladowanie slownikow..." />;
+    return <LoadingBlock message="Ladowanie danych sekcji..." />;
   }
 
   if (state.error || !state.data) {
     return (
       <ErrorBlock
-        title="Blad sekcji slownikow"
-        message={state.error ?? 'Brak danych slownikowych.'}
+        title="Blad danych sekcji"
+        message={state.error ?? 'Brak danych.'}
         onRetry={() => void loadDataset()}
       />
     );
@@ -427,27 +438,29 @@ export function AdminReferencesPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <AdminPanel
-        title={`Encja: ${entityTitleMap[selectedEntity]}`}
-        subtitle={`${currentMeta.description}. Aktywne rekordy: ${activeCount} / ${selectedRows.length}`}
+        title={currentMeta.label}
+        subtitle={`${sectionLabelMap[section]}. ${currentMeta.description} Aktywne: ${activeCount} / ${selectedRows.length}`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
-            Dodaj rekord
+            {currentMeta.createLabel}
           </button>
         }
       >
         <div className="mb-4 flex flex-wrap gap-2">
-          {ENTITY_ORDER.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={
-                selectedEntity === item.key ? 'admin-btn admin-btn-primary' : 'admin-btn admin-btn-secondary'
-              }
-              onClick={() => setSelectedEntity(item.key)}
-            >
-              {item.label} ({getDatasetCount(dataset, item.key)})
-            </button>
-          ))}
+          {sectionEntities.map((entityKey) => {
+            const meta = adminEntityMetaByKey[entityKey];
+            const isActive = selectedEntity === entityKey;
+
+            return (
+              <Link
+                key={entityKey}
+                to={meta.route}
+                className={isActive ? 'admin-btn admin-btn-primary' : 'admin-btn admin-btn-secondary'}
+              >
+                {meta.label} ({getDatasetCount(dataset, entityKey)})
+              </Link>
+            );
+          })}
         </div>
 
         {flashMessage ? (
@@ -489,7 +502,7 @@ export function AdminReferencesPage(): JSX.Element {
                       : selectedEntity === 'subjects'
                         ? String(typedRow.fieldOfStudyName)
                         : selectedEntity === 'floors'
-                          ? `Sort: ${String(typedRow.sortOrder)}`
+                          ? `Kolejnosc: ${String(typedRow.sortOrder)}`
                           : '-';
                   const updatedAt = String(typedRow.updatedAt ?? '');
                   const isActive = Boolean(typedRow.isActive);
@@ -534,21 +547,21 @@ export function AdminReferencesPage(): JSX.Element {
 
       <ConfirmModal
         open={formOpen}
-        title={formMode === 'create' ? 'Dodaj rekord slownikowy' : `Edytuj rekord #${editingId ?? ''}`}
-        message="Wypelnij pola i zapisz rekord."
-        confirmLabel={formMode === 'create' ? 'Dodaj rekord' : 'Zapisz zmiany'}
+        title={formMode === 'create' ? currentMeta.createLabel : `Edytuj rekord #${editingId ?? ''}`}
+        message="Wypelnij pola i zapisz zmiany. Powiazania wybieraj z list kontrolowanych."
+        confirmLabel={formMode === 'create' ? 'Dodaj' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
             setFormOpen(false);
           }
         }}
         onConfirm={() => {
-          const formElement = document.getElementById('reference-form') as HTMLFormElement | null;
+          const formElement = document.getElementById('catalog-form') as HTMLFormElement | null;
           formElement?.requestSubmit();
         }}
         busy={formBusy}
       >
-        <form id="reference-form" onSubmit={submitForm} className="grid gap-3">
+        <form id="catalog-form" onSubmit={submitForm} className="grid gap-3">
           {selectedEntity === 'lecturers' ? (
             <label className="admin-field">
               <span className="admin-label">Imie i nazwisko</span>
@@ -573,7 +586,7 @@ export function AdminReferencesPage(): JSX.Element {
                 />
               </label>
               <label className="admin-field">
-                <span className="admin-label">Sort order</span>
+                <span className="admin-label">Kolejnosc wyswietlania</span>
                 <input
                   className="admin-input"
                   type="number"
@@ -616,7 +629,7 @@ export function AdminReferencesPage(): JSX.Element {
                   required
                 >
                   <option value={0}>Wybierz kierunek</option>
-                    {dataset.fieldsOfStudy.map((field) => (
+                  {dataset.fieldsOfStudy.map((field) => (
                     <option key={field.id} value={field.id}>
                       {field.name}
                     </option>
@@ -666,7 +679,7 @@ export function AdminReferencesPage(): JSX.Element {
                 setFormState((prev) => ({ ...prev, isActive: event.target.checked }))
               }
             />
-            Rekord aktywny
+            Pozycja aktywna
           </label>
 
           {formError ? (
@@ -679,9 +692,9 @@ export function AdminReferencesPage(): JSX.Element {
 
       <ConfirmModal
         open={Boolean(deleteState)}
-        title={deleteState ? `Usun rekord: ${deleteState.label}` : 'Usun rekord'}
-        message="Usuniecie jest zablokowane, jesli rekord jest wykorzystywany przez inne dane."
-        confirmLabel="Usun rekord"
+        title={deleteState ? `Usun pozycje: ${deleteState.label}` : 'Usun pozycje'}
+        message="Usuniecie jest blokowane, jesli pozycja jest wykorzystywana przez inne rekordy."
+        confirmLabel="Usun pozycje"
         onCancel={() => {
           if (!deleteBusy) {
             setDeleteState(null);
@@ -697,7 +710,7 @@ export function AdminReferencesPage(): JSX.Element {
         ) : deleteState && deleteState.dependencies.length > 0 ? (
           <div className="space-y-2">
             <p className="m-0 rounded-xl border border-[#5f4b29] bg-[#2d2414] px-3 py-2 text-sm text-[#ffd69e]">
-              Rekord jest uzywany i nie moze zostac usuniety.
+              Ta pozycja jest uzywana i nie moze zostac usunieta.
             </p>
             {deleteState.dependencies.map((dependency) => (
               <p key={dependency.key} className="m-0 text-sm text-[#b9cbe8]">

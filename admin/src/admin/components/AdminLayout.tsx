@@ -1,29 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../auth/AdminAuthContext';
-
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/rooms', label: 'Sale' },
-  { to: '/schedule-entries', label: 'Harmonogram' },
-  { to: '/references', label: 'Slowniki' }
-];
-
-const resolvePageTitle = (pathname: string): string => {
-  if (pathname.startsWith('/rooms')) {
-    return 'Zarzadzanie salami';
-  }
-
-  if (pathname.startsWith('/schedule-entries')) {
-    return 'Zarzadzanie harmonogramem';
-  }
-
-  if (pathname.startsWith('/references')) {
-    return 'Zarzadzanie slownikami i relacjami';
-  }
-
-  return 'Dashboard administracyjny';
-};
+import { adminNavGroups, resolveNavContext, resolvePageTitle } from '../config/adminNavigation';
 
 export function AdminLayout(): JSX.Element {
   const location = useLocation();
@@ -32,6 +10,7 @@ export function AdminLayout(): JSX.Element {
   const publicAppBaseUrl = import.meta.env.VITE_PUBLIC_APP_BASE_URL || 'http://localhost:5173';
 
   const pageTitle = useMemo(() => resolvePageTitle(location.pathname), [location.pathname]);
+  const navContext = useMemo(() => resolveNavContext(location.pathname), [location.pathname]);
 
   return (
     <div className="admin-shell min-h-screen">
@@ -56,18 +35,25 @@ export function AdminLayout(): JSX.Element {
           </div>
 
           <nav className="mt-8 flex flex-col gap-2">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/dashboard'}
-                className={({ isActive }) =>
-                  isActive ? 'admin-nav-link admin-nav-link-active' : 'admin-nav-link'
-                }
-                onClick={() => setMobileNavOpen(false)}
-              >
-                {item.label}
-              </NavLink>
+            {adminNavGroups.map((group) => (
+              <section key={group.label} className="admin-nav-group">
+                <p className="admin-nav-group-title">{group.label}</p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end
+                      className={({ isActive }) =>
+                        isActive ? 'admin-nav-link admin-nav-link-active' : 'admin-nav-link'
+                      }
+                      onClick={() => setMobileNavOpen(false)}
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </section>
             ))}
           </nav>
 
@@ -98,7 +84,9 @@ export function AdminLayout(): JSX.Element {
         <div className="relative z-10 flex min-h-screen flex-col px-4 pb-6 pt-4 md:px-6 lg:px-8 lg:py-6">
           <header className="admin-topbar">
             <div>
-              <p className="admin-kicker">Panel administratora</p>
+              <p className="admin-kicker">
+                {navContext ? `${navContext.groupLabel} / ${navContext.itemLabel}` : 'Panel administratora'}
+              </p>
               <h1 className="admin-page-title">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-2">

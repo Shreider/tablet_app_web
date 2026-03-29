@@ -94,24 +94,29 @@ export function AdminDashboardPage(): JSX.Element {
       <section className="grid gap-4 xl:grid-cols-[1.3fr_minmax(0,1fr)]">
         <AdminPanel
           title="Szybkie akcje"
-          subtitle="Przejscia do sekcji CRUD"
+          subtitle="Najczesciej uzywane obszary administracyjne"
           actions={<span className="text-xs text-[#8ca0c4]">Live DB</span>}
         >
-          <div className="grid gap-3 py-2 sm:grid-cols-3">
+          <div className="grid gap-3 py-2 sm:grid-cols-2 xl:grid-cols-4">
             <QuickLinkCard
-              title="Zarzadzaj salami"
-              text="Dodawaj, edytuj i usuwaj sale z wyborami relacyjnymi (budynek, skrzydlo, pietro)."
+              title="Sale"
+              text="Dodawaj i edytuj sale wraz z lokalizacja: budynek, skrzydlo i pietro."
               to="/rooms"
             />
             <QuickLinkCard
-              title="Zarzadzaj harmonogramem"
-              text="Pelny CRUD wpisow zajec oparty na slownikach i kontrolowanych listach."
+              title="Harmonogram"
+              text="Prowadz wpisy zajec, terminy oraz komplet relacji do sal i prowadzacych."
               to="/schedule-entries"
             />
             <QuickLinkCard
-              title="Zarzadzaj slownikami"
-              text="Centralna edycja budynkow, grup, typow zajec, kierunkow i przedmiotow."
-              to="/references"
+              title="Kadra i oferta"
+              text="Wykladowcy, grupy, typy zajec, kierunki i przedmioty w jednym miejscu."
+              to="/teaching/lecturers"
+            />
+            <QuickLinkCard
+              title="Lokalizacje"
+              text="Budynki, skrzydla i pietra wykorzystywane przez sale i harmonogram."
+              to="/locations/buildings"
             />
           </div>
         </AdminPanel>

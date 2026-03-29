@@ -343,8 +343,8 @@ export function AdminScheduleEntriesPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <AdminPanel
-        title="Encja: schedule_entries"
-        subtitle={totalLabel}
+        title="Harmonogram zajec"
+        subtitle={`${totalLabel}. Zarzadzaj planem zajec i relacjami miedzy danymi.`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
             Dodaj wpis

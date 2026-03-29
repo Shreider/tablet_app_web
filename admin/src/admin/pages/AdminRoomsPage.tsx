@@ -331,8 +331,8 @@ export function AdminRoomsPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <AdminPanel
-        title="Encja: rooms"
-        subtitle={totalLabel}
+        title="Sale"
+        subtitle={`${totalLabel}. Zarzadzaj lista sal i ich lokalizacja.`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
             Dodaj sale

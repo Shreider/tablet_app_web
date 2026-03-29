@@ -50,6 +50,14 @@
     @apply border-[#3f74b8] bg-[#12243e] text-[#eaf4ff];
   }
 
+  .admin-nav-group {
+    @apply rounded-2xl border border-[#20334d] bg-[#0e1a2d]/65 p-3;
+  }
+
+  .admin-nav-group-title {
+    @apply m-0 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-[#7e95ba];
+  }
+
   .admin-topbar {
     @apply flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2b425f] p-4 shadow-[0_18px_55px_rgba(3,7,18,0.4)] backdrop-blur;
     background-color: rgba(14, 26, 44, 0.85);
