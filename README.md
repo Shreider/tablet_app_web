@@ -1,62 +1,74 @@
 # Room Tablet Preview
 
-Demonstracyjny prototyp aplikacji webowej do wyświetlania informacji o zajęciach na tabletach montowanych przy salach.
+Aplikacja webowa w architekturze:
+- `frontend` (React + Vite + Tailwind, aplikacja użytkowa),
+- `admin` (React + Vite + Tailwind, osobny panel administracyjny),
+- `backend` (Node.js + Express + TypeScript),
+- `database` (PostgreSQL),
+- `Prisma` (schema, migracje, Prisma Client).
 
-## Cel tej wersji
+## Model danych i Prisma
 
-To jest **preview produktu**:
-- frontend pokazuje harmonogram sali na danych mockowych,
-- backend działa jako szkielet pod przyszłe API,
-- PostgreSQL jest gotowy jako osobny kontener pod dalszy rozwój,
-- brak logowania, panelu admina i produkcyjnej logiki biznesowej.
+Model bazy jest utrzymywany przez Prisma:
+- schema: `backend/prisma/schema.prisma`,
+- migracje: `backend/prisma/migrations/*`,
+- klient: `@prisma/client`.
 
-## Stos i architektura
+Główne encje:
+- `Room` (`rooms`),
+- `ScheduleEntry` (`schedule_entries`) z relacją `Room 1:N ScheduleEntry`.
 
-Projekt działa na Docker Compose i uruchamia 3 serwisy:
-1. `frontend` (React + Vite + Tailwind CSS)
-2. `backend` (Node.js + Express)
-3. `database` (PostgreSQL 16)
+## Endpointy API
 
-## Widok aplikacji (frontend)
+Wszystkie endpointy backendu są pod `/api`.
 
-Interfejs jest zaprojektowany pod tablet w orientacji poziomej i wykorzystuje ciemnoniebieski motyw:
-- **lewa sekcja (~80%)**: aktualnie trwające zajęcia,
-- **prawa sekcja (~20%)**: pionowa lista harmonogramu „co dalej”,
-- kliknięcie elementu listy otwiera **jeden reużywalny modal** ze szczegółami.
+Publiczne:
+- `GET /api/health`
+- `GET /api/rooms`
+- `GET /api/room/:roomId`
+- `GET /api/schedule`
+- `GET /api/schedule?roomId=<id>`
+- `GET /api/schedule?date=YYYY-MM-DD`
 
-Dane pochodzą wyłącznie z mocków (`frontend/src/data/mockSchedule.ts`).
+Admin (`/api/admin/*`):
+- `POST /api/admin/auth/login`
+- `GET /api/admin/auth/session`
+- `GET /api/admin/dashboard`
+- `GET /api/admin/rooms`
+- `GET /api/admin/rooms/options`
+- `GET /api/admin/rooms/:id`
+- `POST /api/admin/rooms`
+- `PUT /api/admin/rooms/:id`
+- `DELETE /api/admin/rooms/:id`
+- `GET /api/admin/schedule-entries`
+- `GET /api/admin/schedule-entries/options`
+- `GET /api/admin/schedule-entries/:id`
+- `POST /api/admin/schedule-entries`
+- `PUT /api/admin/schedule-entries/:id`
+- `DELETE /api/admin/schedule-entries/:id`
 
-## Struktura projektu
+## Routing i porty
 
-```text
-.
-├── backend
-│   ├── Dockerfile
-│   ├── package.json
-│   └── src
-│       ├── index.js
-│       └── mockSchedule.js
-├── database
-│   └── README.md
-├── frontend
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── src
-│   │   ├── components
-│   │   ├── data
-│   │   ├── types
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   ├── main.tsx
-│   │   └── vite-env.d.ts
-│   ├── index.html
-│   ├── postcss.config.cjs
-│   ├── tailwind.config.cjs
-│   ├── tsconfig.json
-│   └── vite.config.ts
-├── docker-compose.yml
-└── README.md
-```
+- Frontend użytkowy: `http://localhost:5173`
+- Panel admina: `http://localhost:5174`
+- Backend API: `http://localhost:3001`
+- Database: brak publikacji portu na hosta (dostęp tylko z backendu w sieci Dockera)
+- Widok sali (frontend): `/room/:roomId`
+- Admin app (osobna aplikacja): `/login`, `/dashboard`, `/rooms`, `/schedule-entries`
+
+## Separacja sieciowa
+
+`docker-compose` używa dwóch sieci:
+- `public_net`: `frontend`, `admin`, `backend`
+- `data_net` (`internal: true`): `backend`, `database`
+
+Dzięki temu tylko `backend` ma dostęp do `database`.
+
+## Autoryzacja admina
+
+Panel admina (aplikacja na porcie 5174) i endpointy `/api/admin` są zabezpieczone tokenem:
+- nagłówek: `Authorization: Bearer <ADMIN_TOKEN>`
+- token konfigurowany przez `ADMIN_TOKEN` w backendzie.
 
 ## Uruchomienie
 
@@ -64,65 +76,38 @@ Wymagania:
 - Docker
 - Docker Compose
 
-Start całego środowiska:
+Start:
 
 ```bash
-docker compose up --build -d
+docker compose up -d --build
 ```
 
-Podgląd usług:
+Przy pierwszym uruchomieniu:
+- backend uruchamia migracje Prisma (`npm run db:migrate`),
+- opcjonalny seed:
 
 ```bash
-docker compose ps
+docker compose exec -T backend npm run db:seed
 ```
 
-Zatrzymanie:
+Stop:
 
 ```bash
 docker compose down
 ```
 
-Zatrzymanie z usunięciem wolumenu bazy:
+Reset wolumenu DB:
 
 ```bash
 docker compose down -v
 ```
 
-## Porty i endpointy
+## Konfiguracja środowiska
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3001`
-- PostgreSQL: `localhost:5432`
-
-Endpointy backendu:
-- `GET /health`
-- `GET /api/schedule/mock`
-
-Przykład:
-
-```bash
-curl http://localhost:3001/health
-curl http://localhost:3001/api/schedule/mock
-```
-
-## Zakres backendu na teraz
-
-Backend jest celowo minimalny:
-- healthcheck,
-- jeden endpoint z danymi mockowymi,
-- brak połączenia z DB w logice runtime.
-
-## Rola PostgreSQL na tym etapie
-
-Baza działa jako osobny kontener i przygotowuje projekt pod kolejne etapy:
-- tabele i migracje,
-- podłączenie ORM,
-- realne zapytania harmonogramu.
-
-## Kierunki rozwoju (następny etap)
-
-- podmiana mocków frontendu na dane z API,
-- filtrowanie po sali/budynku/dniu,
-- automatyczne oznaczanie „trwa teraz” na podstawie czasu,
-- podłączenie backendu do PostgreSQL i dodanie modeli/migracji,
-- rozszerzenie endpointów harmonogramu.
+Domyślne zmienne w `docker-compose.yml`:
+- `DATABASE_URL` (runtime read-only: `web_app`),
+- `DATABASE_ADMIN_URL` (operacje administracyjne / migracje),
+- `ADMIN_TOKEN`,
+- `APP_TIMEZONE`,
+- `CORS_ORIGIN`,
+- `VITE_PUBLIC_APP_BASE_URL` (w usłudze `admin`, link do aplikacji użytkowej).

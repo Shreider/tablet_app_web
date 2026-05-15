@@ -9,6 +9,7 @@
 
   body {
     @apply m-0 min-h-screen bg-background text-foreground antialiased;
+    font-family: 'Space Grotesk', 'IBM Plex Sans', 'Segoe UI', sans-serif;
     background-image:
       radial-gradient(circle at 8% 10%, rgba(59, 130, 246, 0.2) 0%, transparent 36%),
       radial-gradient(circle at 88% 16%, rgba(59, 130, 246, 0.12) 0%, transparent 34%);

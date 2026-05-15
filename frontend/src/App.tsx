@@ -4,21 +4,33 @@ import { CurrentLecturePanel } from './components/CurrentLecturePanel';
 import { HeaderBar } from './components/HeaderBar';
 import { LectureDetailsModal } from './components/LectureDetailsModal';
 import { ScheduleSidebar } from './components/ScheduleSidebar';
-import { mockSchedule, roomMetadata } from './data/mockSchedule';
 import type { LectureEvent } from './types/schedule';
 
-export default function App(): JSX.Element {
-  const [selectedLecture, setSelectedLecture] = useState<LectureEvent | null>(null);
+interface AppProps {
+  room: {
+    roomId: string;
+    building: string;
+    wing: string;
+    floor: string;
+  };
+  schedule: LectureEvent[];
+  currentLecture: LectureEvent | null;
+}
 
-  const currentLecture = mockSchedule.find((lecture) => lecture.isCurrent) ?? mockSchedule[0];
+export default function App({ room, schedule, currentLecture }: AppProps): JSX.Element {
+  const [selectedLecture, setSelectedLecture] = useState<LectureEvent | null>(null);
 
   return (
     <div className="flex min-h-screen flex-col gap-5 p-4 sm:p-5 lg:h-screen lg:overflow-hidden lg:p-[1.1rem]">
-      <HeaderBar room={roomMetadata.room} building={roomMetadata.building} zone={roomMetadata.zone} />
+      <HeaderBar
+        room={room.roomId}
+        building={room.building}
+        zone={`${room.floor} • ${room.wing}`}
+      />
 
       <AppLayout
         left={<CurrentLecturePanel lecture={currentLecture} />}
-        right={<ScheduleSidebar schedule={mockSchedule} onSelect={setSelectedLecture} />}
+        right={<ScheduleSidebar schedule={schedule} onSelect={setSelectedLecture} />}
       />
 
       <LectureDetailsModal lecture={selectedLecture} onClose={() => setSelectedLecture(null)} />

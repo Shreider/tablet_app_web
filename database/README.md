@@ -1,15 +1,38 @@
-# Database (PostgreSQL)
+# Database (PostgreSQL + Prisma)
 
-Ten katalog dokumentuje rolę serwisu bazy danych w tej wersji projektu.
+Baza danych jest głównym źródłem prawdy dla aplikacji.
 
-Aktualny stan:
-- PostgreSQL działa jako osobny kontener (`database`) w `docker-compose.yml`.
-- Aplikacja nie wykorzystuje jeszcze aktywnie bazy w logice backendu.
-- Konfiguracja jest gotowa pod kolejne etapy: tabele, migracje i seedy.
+## Prisma
 
-Kolejne kroki rozwoju:
-- dodanie migracji (np. Prisma/Knex/Flyway),
-- przygotowanie schematu zajęć, sal i prowadzących,
-- podpięcie backendu do rzeczywistych zapytań SQL.
+Schemat i migracje są utrzymywane przez Prisma:
+- schema: `backend/prisma/schema.prisma`
+- migracje: `backend/prisma/migrations/*`
 
-ELO
+Migracje uruchamiane są poleceniem:
+
+```bash
+docker compose exec -T backend npm run db:migrate
+```
+
+## Konta i uprawnienia
+
+- `admin` - konto administracyjne (migracje Prisma, seed, operacje zapisu panelu admin),
+- `web_app` - konto runtime publicznego API (odczyt).
+
+Role są przygotowywane przez pliki init w `database/init`.
+
+## Encje
+
+- `Room` (`rooms`) - metadane sal,
+- `ScheduleEntry` (`schedule_entries`) - harmonogram zajęć,
+- relacja: `rooms (1) -> (N) schedule_entries`.
+
+## Seed
+
+Seed danych testowych zgodny z Prisma:
+
+```bash
+docker compose exec -T backend npm run db:seed
+```
+
+Seed czyści i odtwarza dane testowe.
