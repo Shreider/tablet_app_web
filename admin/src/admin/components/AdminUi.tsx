@@ -124,6 +124,7 @@ export function ConfirmModal({
   onConfirm,
   destructive = false,
   busy = false,
+  hideCancel = false,
   children
 }: {
   open: boolean;
@@ -135,6 +136,7 @@ export function ConfirmModal({
   onConfirm: () => void;
   destructive?: boolean;
   busy?: boolean;
+  hideCancel?: boolean;
   children?: ReactNode;
 }): JSX.Element | null {
   if (!open) {
@@ -154,9 +156,11 @@ export function ConfirmModal({
         <p className="admin-modal-text">{message}</p>
         {children ? <div className="mt-3">{children}</div> : null}
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" className="admin-btn admin-btn-secondary" onClick={onCancel} disabled={busy}>
-            {cancelLabel ?? 'Anuluj'}
-          </button>
+          {hideCancel ? null : (
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={onCancel} disabled={busy}>
+              {cancelLabel ?? 'Anuluj'}
+            </button>
+          )}
           <button
             type="button"
             className={destructive ? 'admin-btn admin-btn-danger' : 'admin-btn admin-btn-primary'}

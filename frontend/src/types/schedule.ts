@@ -21,7 +21,6 @@ export interface RoomDetails {
   roomId: string;
   name: string;
   building: string;
-  wing: string;
   floor: string;
 }
 

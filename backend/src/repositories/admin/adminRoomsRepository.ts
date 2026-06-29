@@ -7,8 +7,7 @@ import type {
   RoomPayload,
   RoomWithEntriesCountRow,
   ScheduleEntryWithRoomRow,
-  SortOrder,
-  WingRow
+  SortOrder
 } from '../../types/domain.js';
 import { formatDateOnly, formatTimeValue } from '../../utils/prismaDate.js';
 
@@ -17,7 +16,6 @@ type RoomSortBy =
   | 'roomCode'
   | 'displayName'
   | 'buildingName'
-  | 'wingName'
   | 'floorLabel'
   | 'createdAt'
   | 'updatedAt'
@@ -29,7 +27,6 @@ interface ListAdminRoomsParams {
   offset: number;
   search: string;
   buildingId: number | null;
-  wingId: number | null;
   floorId: number | null;
   sortBy: string;
   sortOrder: SortOrder;
@@ -40,10 +37,8 @@ const mapRoom = (room: {
   roomCode: string;
   displayName: string;
   buildingId: number;
-  wingId: number;
   floorId: number;
   building: { name: string };
-  wing: { name: string };
   floor: { label: string };
   createdAt: Date;
   updatedAt: Date;
@@ -54,8 +49,6 @@ const mapRoom = (room: {
   display_name: room.displayName,
   building_id: room.buildingId,
   building_name: room.building.name,
-  wing_id: room.wingId,
-  wing_name: room.wing.name,
   floor_id: room.floorId,
   floor_label: room.floor.label,
   created_at: room.createdAt,
@@ -117,9 +110,8 @@ const mapEntrySummary = (
 const buildRoomWhere = ({
   search,
   buildingId,
-  wingId,
   floorId
-}: Pick<ListAdminRoomsParams, 'search' | 'buildingId' | 'wingId' | 'floorId'>): Prisma.RoomWhereInput => {
+}: Pick<ListAdminRoomsParams, 'search' | 'buildingId' | 'floorId'>): Prisma.RoomWhereInput => {
   const where: Prisma.RoomWhereInput = {};
 
   if (search) {
@@ -127,17 +119,12 @@ const buildRoomWhere = ({
       { roomCode: { contains: search, mode: 'insensitive' } },
       { displayName: { contains: search, mode: 'insensitive' } },
       { building: { name: { contains: search, mode: 'insensitive' } } },
-      { wing: { name: { contains: search, mode: 'insensitive' } } },
       { floor: { label: { contains: search, mode: 'insensitive' } } }
     ];
   }
 
   if (buildingId) {
     where.buildingId = buildingId;
-  }
-
-  if (wingId) {
-    where.wingId = wingId;
   }
 
   if (floorId) {
@@ -159,8 +146,6 @@ const resolveOrderBy = (sortBy: string, sortOrder: SortOrder): Prisma.RoomOrderB
       return [{ displayName: sortOrder }, { roomCode: 'asc' }];
     case 'buildingName':
       return [{ building: { name: sortOrder } }, { roomCode: 'asc' }];
-    case 'wingName':
-      return [{ wing: { name: sortOrder } }, { roomCode: 'asc' }];
     case 'floorLabel':
       return [{ floor: { label: sortOrder } }, { roomCode: 'asc' }];
     case 'createdAt':
@@ -180,12 +165,11 @@ export const listAdminRooms = async ({
   offset,
   search,
   buildingId,
-  wingId,
   floorId,
   sortBy,
   sortOrder
 }: ListAdminRoomsParams): Promise<PaginationResult<RoomWithEntriesCountRow>> => {
-  const where = buildRoomWhere({ search, buildingId, wingId, floorId });
+  const where = buildRoomWhere({ search, buildingId, floorId });
 
   const [total, rows] = await Promise.all([
     prismaAdmin.room.count({ where }),
@@ -195,11 +179,6 @@ export const listAdminRooms = async ({
       take: limit,
       include: {
         building: {
-          select: {
-            name: true
-          }
-        },
-        wing: {
           select: {
             name: true
           }
@@ -232,11 +211,6 @@ export const findAdminRoomById = async (roomId: number): Promise<RoomWithEntries
     where: { id: roomId },
     include: {
       building: {
-        select: {
-          name: true
-        }
-      },
-      wing: {
         select: {
           name: true
         }
@@ -285,7 +259,6 @@ export const createAdminRoom = async ({
   roomCode,
   displayName,
   buildingId,
-  wingId,
   floorId
 }: RoomPayload): Promise<number> => {
   const room = await prismaAdmin.room.create({
@@ -293,7 +266,6 @@ export const createAdminRoom = async ({
       roomCode,
       displayName,
       buildingId,
-      wingId,
       floorId
     },
     select: {
@@ -306,7 +278,7 @@ export const createAdminRoom = async ({
 
 export const updateAdminRoom = async (
   roomId: number,
-  { roomCode, displayName, buildingId, wingId, floorId }: RoomPayload
+  { roomCode, displayName, buildingId, floorId }: RoomPayload
 ): Promise<number> => {
   const room = await prismaAdmin.room.update({
     where: {
@@ -316,7 +288,6 @@ export const updateAdminRoom = async (
       roomCode,
       displayName,
       buildingId,
-      wingId,
       floorId
     },
     select: {
@@ -397,35 +368,6 @@ export const listBuildingOptions = async (): Promise<ReferenceOptionRow[]> => {
   }));
 };
 
-export const listWingOptions = async (): Promise<WingRow[]> => {
-  const rows = await prismaAdmin.wing.findMany({
-    where: {
-      isActive: true,
-      building: {
-        isActive: true
-      }
-    },
-    orderBy: [{ building: { name: 'asc' } }, { name: 'asc' }],
-    include: {
-      building: {
-        select: {
-          name: true
-        }
-      }
-    }
-  });
-
-  return rows.map((row) => ({
-    id: row.id,
-    building_id: row.buildingId,
-    building_name: row.building.name,
-    name: row.name,
-    is_active: row.isActive,
-    created_at: row.createdAt,
-    updated_at: row.updatedAt
-  }));
-};
-
 export const listFloorOptions = async (): Promise<Array<{ id: number; label: string }>> => {
   const rows = await prismaAdmin.floor.findMany({
     where: {
@@ -443,23 +385,12 @@ export const listFloorOptions = async (): Promise<Array<{ id: number; label: str
 
 export const listRoomFilterOptions = async (): Promise<{
   buildings: ReferenceOptionRow[];
-  wings: Array<{ id: number; name: string; buildingId: number; buildingName: string }>;
   floors: Array<{ id: number; label: string }>;
 }> => {
-  const [buildings, wings, floors] = await Promise.all([
-    listBuildingOptions(),
-    listWingOptions(),
-    listFloorOptions()
-  ]);
+  const [buildings, floors] = await Promise.all([listBuildingOptions(), listFloorOptions()]);
 
   return {
     buildings,
-    wings: wings.map((wing) => ({
-      id: wing.id,
-      name: wing.name,
-      buildingId: wing.building_id,
-      buildingName: wing.building_name
-    })),
     floors
   };
 };

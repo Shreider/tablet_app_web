@@ -5,19 +5,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#1c2538',
-        surface: '#2a3752',
-        primary: '#3b82f6',
-        foreground: '#ffffff',
-        muted: '#dce7f5',
-        border: '#3e4c6b'
+        background: '#060d17',
+        surface: '#0d1929',
+        primary: '#2567bc',
+        foreground: '#eaf3ff',
+        muted: '#a6bbdb',
+        border: '#2b425f'
       },
       boxShadow: {
-        panel: '0 16px 38px rgba(8, 15, 33, 0.36)'
+        panel: '0 18px 50px rgba(2, 6, 16, 0.45)'
       },
       borderRadius: {
-        panel: '22px',
-        card: '14px'
+        panel: '20px',
+        card: '12px'
       },
       keyframes: {
         fadeIn: {

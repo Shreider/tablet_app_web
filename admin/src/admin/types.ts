@@ -4,8 +4,6 @@ export interface AdminRoom {
   displayName: string;
   buildingId: number;
   buildingName: string;
-  wingId: number;
-  wingName: string;
   floorId: number;
   floorLabel: string;
   createdAt: string;
@@ -47,13 +45,6 @@ export interface AdminRoomOption {
 export interface AdminReferenceOption {
   id: number;
   name: string;
-}
-
-export interface AdminWingOption {
-  id: number;
-  name: string;
-  buildingId: number;
-  buildingName: string;
 }
 
 export interface AdminFloorOption {
@@ -112,7 +103,6 @@ export interface AdminDashboardResponse {
 export interface AdminRoomsOptionsResponse {
   rooms: AdminRoomOption[];
   buildings: AdminReferenceOption[];
-  wings: AdminWingOption[];
   floors: AdminFloorOption[];
 }
 
@@ -126,16 +116,6 @@ export interface AdminScheduleOptionsResponse {
 
 export interface AdminBuilding {
   id: number;
-  name: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AdminWing {
-  id: number;
-  buildingId: number;
-  buildingName: string;
   name: string;
   isActive: boolean;
   createdAt: string;
@@ -185,7 +165,6 @@ export interface AdminFieldOfStudy {
 
 export interface AdminReferencesDatasetResponse {
   buildings: AdminBuilding[];
-  wings: AdminWing[];
   floors: AdminFloor[];
   lecturers: AdminLecturer[];
   studentGroups: AdminStudentGroup[];
@@ -196,7 +175,6 @@ export interface AdminReferencesDatasetResponse {
 
 export type AdminReferenceEntity =
   | 'buildings'
-  | 'wings'
   | 'floors'
   | 'lecturers'
   | 'student-groups'

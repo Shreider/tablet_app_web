@@ -6,8 +6,6 @@ export interface RoomRow {
   display_name: string;
   building_id: number;
   building_name: string;
-  wing_id: number;
-  wing_name: string;
   floor_id: number;
   floor_label: string;
   created_at: Date;
@@ -31,16 +29,6 @@ export interface ReferenceOptionRow {
 
 export interface BuildingRow {
   id: number;
-  name: string;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface WingRow {
-  id: number;
-  building_id: number;
-  building_name: string;
   name: string;
   is_active: boolean;
   created_at: Date;
@@ -129,7 +117,6 @@ export interface ScheduleEntryWithRoomRow extends ScheduleEntryRow {
 
 export interface ScheduleEntryWithRoomMetadataRow extends ScheduleEntryWithRoomRow {
   building_name: string;
-  wing_name: string;
   floor_label: string;
 }
 
@@ -151,7 +138,6 @@ export interface RoomPayload {
   roomCode: string;
   displayName: string;
   buildingId: number;
-  wingId: number;
   floorId: number;
 }
 

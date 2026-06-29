@@ -9,8 +9,7 @@ import type {
   RoomWithEntriesCountRow,
   ScheduleEntryWithRoomRow,
   StudentGroupRow,
-  SubjectRow,
-  WingRow
+  SubjectRow
 } from '../types/domain.js';
 
 const toTimeString = (value: string | Date): string => String(value).slice(0, 5);
@@ -21,8 +20,6 @@ export const mapRoomRecord = (row: RoomWithEntriesCountRow) => ({
   displayName: row.display_name,
   buildingId: row.building_id,
   buildingName: row.building_name,
-  wingId: row.wing_id,
-  wingName: row.wing_name,
   floorId: row.floor_id,
   floorLabel: row.floor_label,
   createdAt: row.created_at,
@@ -68,16 +65,6 @@ export const mapReferenceOption = (row: ReferenceOptionRow) => ({
 
 export const mapBuildingRecord = (row: BuildingRow) => ({
   id: row.id,
-  name: row.name,
-  isActive: row.is_active,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-});
-
-export const mapWingRecord = (row: WingRow) => ({
-  id: row.id,
-  buildingId: row.building_id,
-  buildingName: row.building_name,
   name: row.name,
   isActive: row.is_active,
   createdAt: row.created_at,

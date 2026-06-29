@@ -15,7 +15,6 @@ export interface RoomSeed {
   roomCode: string;
   displayName: string;
   building: string;
-  wing: string;
   floorLabel: string;
   entries: RoomSeedEntry[];
 }
@@ -25,7 +24,6 @@ export const roomSeeds: RoomSeed[] = [
     roomCode: '30',
     displayName: 'Sala 30',
     building: 'Budynek A',
-    wing: 'Skrzydlo polnocne',
     floorLabel: 'Parter',
     entries: [
       {
@@ -91,7 +89,6 @@ export const roomSeeds: RoomSeed[] = [
     roomCode: '31',
     displayName: 'Sala 31',
     building: 'Budynek A',
-    wing: 'Skrzydlo poludniowe',
     floorLabel: 'Parter',
     entries: [
       {
@@ -156,7 +153,6 @@ export const roomSeeds: RoomSeed[] = [
     roomCode: '101',
     displayName: 'Sala 101',
     building: 'Budynek B',
-    wing: 'Lacznik centralny',
     floorLabel: '1 pietro',
     entries: [
       {
@@ -221,7 +217,6 @@ export const roomSeeds: RoomSeed[] = [
     roomCode: '205',
     displayName: 'Sala 205',
     building: 'Budynek C',
-    wing: 'Skrzydlo zachodnie',
     floorLabel: '2 pietro',
     entries: [
       {
@@ -286,7 +281,6 @@ export const roomSeeds: RoomSeed[] = [
     roomCode: 'A12',
     displayName: 'Sala A12',
     building: 'Budynek D',
-    wing: 'Strefa laboratoryjna',
     floorLabel: 'Parter',
     entries: [
       {

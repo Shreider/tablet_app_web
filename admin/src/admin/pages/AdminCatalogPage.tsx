@@ -44,7 +44,6 @@ interface DatasetState {
 interface ReferenceFormState {
   name: string;
   isActive: boolean;
-  buildingId: number;
   label: string;
   sortOrder: number;
   fullName: string;
@@ -63,7 +62,6 @@ interface DeleteState {
 const initialFormState: ReferenceFormState = {
   name: '',
   isActive: true,
-  buildingId: 0,
   label: '',
   sortOrder: 0,
   fullName: '',
@@ -81,8 +79,6 @@ const getDatasetCount = (data: AdminReferencesDatasetResponse, entity: AdminRefe
   switch (entity) {
     case 'buildings':
       return data.buildings.length;
-    case 'wings':
-      return data.wings.length;
     case 'floors':
       return data.floors.length;
     case 'lecturers':
@@ -180,8 +176,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     switch (selectedEntity) {
       case 'buildings':
         return state.data.buildings;
-      case 'wings':
-        return state.data.wings;
       case 'floors':
         return state.data.floors;
       case 'lecturers':
@@ -207,7 +201,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
   const currentMeta = adminEntityMetaByKey[selectedEntity];
 
   const openCreateForm = () => {
-    const defaultBuildingId = state.data?.buildings[0]?.id ?? 0;
     const defaultFieldId = state.data?.fieldsOfStudy[0]?.id ?? 0;
 
     setFormMode('create');
@@ -215,7 +208,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     setFormError(null);
     setFormState({
       ...initialFormState,
-      buildingId: defaultBuildingId,
       fieldOfStudyId: defaultFieldId
     });
     setFormOpen(true);
@@ -228,7 +220,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     setFormState({
       name: String(row.name ?? ''),
       isActive: Boolean(row.isActive),
-      buildingId: Number(row.buildingId ?? 0),
       label: String(row.label ?? ''),
       sortOrder: Number(row.sortOrder ?? 0),
       fullName: String(row.fullName ?? ''),
@@ -245,8 +236,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     switch (entityKey) {
       case 'buildings':
         return { name: data.name.trim(), isActive: data.isActive };
-      case 'wings':
-        return { name: data.name.trim(), buildingId: data.buildingId, isActive: data.isActive };
       case 'floors':
         return {
           label: data.label.trim(),
@@ -276,7 +265,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
   const validateReferenceForm = (entityKey: AdminReferenceEntity, data: ReferenceFormState): string | null => {
     if (
       entityKey === 'buildings' ||
-      entityKey === 'wings' ||
       entityKey === 'student-groups' ||
       entityKey === 'class-types' ||
       entityKey === 'fields-of-study'
@@ -288,10 +276,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
 
     if (entityKey === 'lecturers' && !data.fullName.trim()) {
       return 'Pole imie i nazwisko jest wymagane.';
-    }
-
-    if (entityKey === 'wings' && (!data.buildingId || data.buildingId <= 0)) {
-      return 'Wybierz budynek.';
     }
 
     if (entityKey === 'floors') {
@@ -497,13 +481,11 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                           ? `${String(typedRow.code)} - ${String(typedRow.name)}`
                           : String(typedRow.name);
                   const relation =
-                    selectedEntity === 'wings'
-                      ? String(typedRow.buildingName)
-                      : selectedEntity === 'subjects'
-                        ? String(typedRow.fieldOfStudyName)
-                        : selectedEntity === 'floors'
-                          ? `Kolejnosc: ${String(typedRow.sortOrder)}`
-                          : '-';
+                    selectedEntity === 'subjects'
+                      ? String(typedRow.fieldOfStudyName)
+                      : selectedEntity === 'floors'
+                        ? `Kolejnosc: ${String(typedRow.sortOrder)}`
+                        : '-';
                   const updatedAt = String(typedRow.updatedAt ?? '');
                   const isActive = Boolean(typedRow.isActive);
 
@@ -638,37 +620,15 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
               </label>
             </div>
           ) : (
-            <>
-              {selectedEntity === 'wings' ? (
-                <label className="admin-field">
-                  <span className="admin-label">Budynek</span>
-                  <select
-                    className="admin-input"
-                    value={formState.buildingId}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, buildingId: Number(event.target.value) }))
-                    }
-                    required
-                  >
-                    <option value={0}>Wybierz budynek</option>
-                    {dataset.buildings.map((building) => (
-                      <option key={building.id} value={building.id}>
-                        {building.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              <label className="admin-field">
-                <span className="admin-label">Nazwa</span>
-                <input
-                  className="admin-input"
-                  value={formState.name}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
-                  required
-                />
-              </label>
-            </>
+            <label className="admin-field">
+              <span className="admin-label">Nazwa</span>
+              <input
+                className="admin-input"
+                value={formState.name}
+                onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+                required
+              />
+            </label>
           )}
 
           <label className="flex items-center gap-2 text-sm text-[#b9cbe8]">

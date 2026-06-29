@@ -108,7 +108,6 @@ export interface FetchAdminRoomsParams {
   limit?: number;
   search?: string;
   buildingId?: number | null;
-  wingId?: number | null;
   floorId?: number | null;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -155,7 +154,6 @@ export interface RoomFormPayload {
   roomCode: string;
   displayName: string;
   buildingId: number;
-  wingId: number;
   floorId: number;
 }
 

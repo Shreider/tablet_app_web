@@ -18,15 +18,13 @@ import {
   mapFloorRecord,
   mapLecturerRecord,
   mapStudentGroupRecord,
-  mapSubjectRecord,
-  mapWingRecord
+  mapSubjectRecord
 } from '../../utils/adminMappers.js';
 import { asNonEmptyString, asPositiveInteger, parseBooleanFlag } from '../../utils/adminValidation.js';
 import { handleAdminError } from './adminControllerUtils.js';
 
 const REFERENCE_ENTITIES = new Set<AdminReferenceEntity>([
   'buildings',
-  'wings',
   'floors',
   'lecturers',
   'student-groups',
@@ -65,12 +63,6 @@ const parseReferencePayload = (
   switch (entity) {
     case 'buildings':
       return {
-        name: asNonEmptyString(data.name, 'name', 120),
-        isActive
-      };
-    case 'wings':
-      return {
-        buildingId: asPositiveInteger(data.buildingId, 'buildingId'),
         name: asNonEmptyString(data.name, 'name', 120),
         isActive
       };
@@ -116,22 +108,6 @@ const validateReferenceRelations = async (
   entity: AdminReferenceEntity,
   payload: ReferencePayload
 ): Promise<void> => {
-  if (entity === 'wings') {
-    const buildingId = (payload as { buildingId: number }).buildingId;
-    const building = await prismaAdmin.building.findUnique({
-      where: {
-        id: buildingId
-      },
-      select: {
-        id: true
-      }
-    });
-
-    if (!building) {
-      throw createError('buildingId does not point to an existing building.', 'VALIDATION_ERROR');
-    }
-  }
-
   if (entity === 'subjects') {
     const fieldOfStudyId = (payload as { fieldOfStudyId: number }).fieldOfStudyId;
     const field = await prismaAdmin.fieldOfStudy.findUnique({
@@ -158,7 +134,6 @@ export const getAdminReferencesDataset: RequestHandler = async (_req, res, next)
 
     return res.status(200).json({
       buildings: dataset.buildings.map(mapBuildingRecord),
-      wings: dataset.wings.map(mapWingRecord),
       floors: dataset.floors.map(mapFloorRecord),
       lecturers: dataset.lecturers.map(mapLecturerRecord),
       studentGroups: dataset.studentGroups.map(mapStudentGroupRecord),

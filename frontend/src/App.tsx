@@ -10,7 +10,6 @@ interface AppProps {
   room: {
     roomId: string;
     building: string;
-    wing: string;
     floor: string;
   };
   schedule: LectureEvent[];
@@ -25,7 +24,7 @@ export default function App({ room, schedule, currentLecture }: AppProps): JSX.E
       <HeaderBar
         room={room.roomId}
         building={room.building}
-        zone={`${room.floor} • ${room.wing}`}
+        zone={room.floor}
       />
 
       <AppLayout

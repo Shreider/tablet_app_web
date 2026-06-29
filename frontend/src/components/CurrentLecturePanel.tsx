@@ -8,7 +8,7 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
   if (!lecture) {
     return (
       <section
-        className="flex h-full flex-col rounded-panel border border-border bg-gradient-to-br from-surface to-[#31415f] p-5 shadow-panel sm:p-6"
+        className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
         aria-label="Aktualnie trwajace zajecia"
       >
         <span className="inline-flex w-fit items-center rounded-full border border-border bg-surface/50 px-3 py-1 text-base font-semibold text-foreground">
@@ -33,14 +33,14 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
 
   return (
     <section
-      className="flex h-full flex-col rounded-panel border border-border bg-gradient-to-br from-surface to-[#31415f] p-5 shadow-panel sm:p-6"
+      className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
       aria-label="Aktualnie trwajace zajecia"
     >
       <span className="inline-flex w-fit items-center rounded-full border border-primary/60 bg-primary/25 px-3 py-1 text-base font-semibold text-foreground">
         {statusLabel}
       </span>
       <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">{lecture.title}</h2>
-      <p className="m-0 text-[clamp(1.2rem,2.3vw,1.85rem)] font-bold text-[#8FC2FF]">
+      <p className="m-0 text-[clamp(1.2rem,2.3vw,1.85rem)] font-bold text-[#79b1ff]">
         {lecture.startTime} - {lecture.endTime}
       </p>
 

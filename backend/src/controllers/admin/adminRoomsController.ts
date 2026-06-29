@@ -29,7 +29,6 @@ const ROOM_SORT_FIELDS = new Set([
   'roomCode',
   'displayName',
   'buildingName',
-  'wingName',
   'floorLabel',
   'createdAt',
   'updatedAt',
@@ -43,28 +42,18 @@ const parseRoomPayload = (payload: unknown): RoomPayload => {
     roomCode: asNonEmptyString(data.roomCode, 'roomCode', 32),
     displayName: asNonEmptyString(data.displayName, 'displayName', 120),
     buildingId: asPositiveInteger(data.buildingId, 'buildingId'),
-    wingId: asPositiveInteger(data.wingId, 'wingId'),
     floorId: asPositiveInteger(data.floorId, 'floorId')
   };
 };
 
 const validateRoomRelations = async (payload: RoomPayload): Promise<void> => {
-  const [building, wing, floor] = await Promise.all([
+  const [building, floor] = await Promise.all([
     prismaAdmin.building.findUnique({ where: { id: payload.buildingId }, select: { id: true, isActive: true } }),
-    prismaAdmin.wing.findUnique({ where: { id: payload.wingId }, select: { id: true, buildingId: true, isActive: true } }),
     prismaAdmin.floor.findUnique({ where: { id: payload.floorId }, select: { id: true, isActive: true } })
   ]);
 
   if (!building || !building.isActive) {
     throw createError('buildingId does not point to an active building.', 'VALIDATION_ERROR');
-  }
-
-  if (!wing || !wing.isActive) {
-    throw createError('wingId does not point to an active wing.', 'VALIDATION_ERROR');
-  }
-
-  if (wing.buildingId !== payload.buildingId) {
-    throw createError('Selected wing does not belong to the selected building.', 'VALIDATION_ERROR');
   }
 
   if (!floor || !floor.isActive) {
@@ -94,7 +83,6 @@ export const getAdminRoomsList: RequestHandler = async (req, res, next) => {
 
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
     const buildingId = req.query.buildingId ? asPositiveInteger(req.query.buildingId, 'buildingId') : null;
-    const wingId = req.query.wingId ? asPositiveInteger(req.query.wingId, 'wingId') : null;
     const floorId = req.query.floorId ? asPositiveInteger(req.query.floorId, 'floorId') : null;
 
     const result = await listAdminRooms({
@@ -103,7 +91,6 @@ export const getAdminRoomsList: RequestHandler = async (req, res, next) => {
       offset,
       search,
       buildingId,
-      wingId,
       floorId,
       sortBy,
       sortOrder
@@ -128,7 +115,6 @@ export const getAdminRoomsOptions: RequestHandler = async (_req, res, next) => {
     return res.status(200).json({
       rooms: roomOptions.map(mapRoomOption),
       buildings: facets.buildings,
-      wings: facets.wings,
       floors: facets.floors
     });
   } catch (error) {

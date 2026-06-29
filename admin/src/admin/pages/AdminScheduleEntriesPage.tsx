@@ -351,27 +351,25 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           </button>
         }
       >
-        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-10">
+        <div className="grid gap-3 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-10">
           <label className="admin-field xl:col-span-2">
             <span className="admin-label">Wyszukiwarka</span>
-            <div className="flex gap-2">
-              <input
-                className="admin-input"
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="tytul, prowadzacy, grupa, kod przedmiotu"
-              />
-              <button
-                type="button"
-                className="admin-btn admin-btn-secondary"
-                onClick={() => {
+            <input
+              className="admin-input"
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
                   setPage(1);
                   setSearch(searchDraft.trim());
-                }}
-              >
-                Szukaj
-              </button>
-            </div>
+                }
+              }}
+              onBlur={() => {
+                setPage(1);
+                setSearch(searchDraft.trim());
+              }}
+              placeholder="tytul, prowadzacy, grupa, kod przedmiotu"
+            />
           </label>
 
           <label className="admin-field">
@@ -813,7 +811,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
         title={detailsState.entry ? `Szczegoly wpisu #${detailsState.entry.id}` : 'Szczegoly wpisu'}
         message="Pelne dane i relacje wpisu harmonogramu."
         confirmLabel="Zamknij"
-        cancelLabel="Zamknij"
+        hideCancel
         onCancel={() => setDetailsOpen(false)}
         onConfirm={() => setDetailsOpen(false)}
       >

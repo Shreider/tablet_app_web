@@ -11,10 +11,8 @@ const mapRoomRow = (room: {
   roomCode: string;
   displayName: string;
   buildingId: number;
-  wingId: number;
   floorId: number;
   building: { name: string };
-  wing: { name: string };
   floor: { label: string };
   createdAt: Date;
   updatedAt: Date;
@@ -24,8 +22,6 @@ const mapRoomRow = (room: {
   display_name: room.displayName,
   building_id: room.buildingId,
   building_name: room.building.name,
-  wing_id: room.wingId,
-  wing_name: room.wing.name,
   floor_id: room.floorId,
   floor_label: room.floor.label,
   created_at: room.createdAt,
@@ -81,11 +77,6 @@ export const findAllRooms = async (): Promise<RoomRow[]> => {
           name: true
         }
       },
-      wing: {
-        select: {
-          name: true
-        }
-      },
       floor: {
         select: {
           label: true
@@ -110,11 +101,6 @@ export const findRoomByCode = async (roomCode: string): Promise<RoomRow | null> 
     },
     include: {
       building: {
-        select: {
-          name: true
-        }
-      },
-      wing: {
         select: {
           name: true
         }
@@ -191,11 +177,6 @@ export const findScheduleForDate = async (
               name: true
             }
           },
-          wing: {
-            select: {
-              name: true
-            }
-          },
           floor: {
             select: {
               label: true
@@ -239,7 +220,6 @@ export const findScheduleForDate = async (
     room_code: entry.room.roomCode,
     display_name: entry.room.displayName,
     building_name: entry.room.building.name,
-    wing_name: entry.room.wing.name,
     floor_label: entry.room.floor.label
   }));
 };

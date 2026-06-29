@@ -51,7 +51,6 @@ const main = async () => {
     await trx.classType.deleteMany();
     await trx.studentGroup.deleteMany();
     await trx.lecturer.deleteMany();
-    await trx.wing.deleteMany();
     await trx.building.deleteMany();
     await trx.floor.deleteMany();
     await trx.fieldOfStudy.deleteMany();
@@ -80,35 +79,6 @@ const main = async () => {
       )
     );
     const buildingByName = new Map(buildings.map((row) => [row.name, row.id]));
-
-    const wingPairs = Array.from(
-      new Set(roomSeeds.map((room) => `${normalize(room.building)}|${normalize(room.wing)}`))
-    )
-      .sort()
-      .map((key) => {
-        const [buildingName, wingName] = key.split('|');
-        return {
-          buildingName,
-          wingName
-        };
-      });
-
-    const wings = await Promise.all(
-      wingPairs.map(({ buildingName, wingName }) =>
-        trx.wing.create({
-          data: {
-            buildingId: buildingByName.get(buildingName)!,
-            name: wingName
-          }
-        })
-      )
-    );
-    const wingByBuildingAndName = new Map(
-      wings.map((row) => {
-        const buildingName = buildingNames.find((name) => buildingByName.get(name) === row.buildingId)!;
-        return [`${buildingName}|${row.name}`, row.id] as const;
-      })
-    );
 
     const fieldNames = Array.from(
       new Set(
@@ -204,7 +174,6 @@ const main = async () => {
 
     for (const room of roomSeeds) {
       const buildingName = normalize(room.building);
-      const wingName = normalize(room.wing);
       const floorLabel = normalize(room.floorLabel);
 
       const createdRoom = await trx.room.create({
@@ -212,7 +181,6 @@ const main = async () => {
           roomCode: normalize(room.roomCode),
           displayName: normalize(room.displayName),
           buildingId: buildingByName.get(buildingName)!,
-          wingId: wingByBuildingAndName.get(`${buildingName}|${wingName}`)!,
           floorId: floorByLabel.get(floorLabel)!
         }
       });

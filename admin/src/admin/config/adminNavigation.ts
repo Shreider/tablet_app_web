@@ -21,14 +21,6 @@ export const adminEntityMetaList: AdminEntityMeta[] = [
     description: 'Budynki dostepne w systemie rezerwacji i harmonogramie.'
   },
   {
-    key: 'wings',
-    label: 'Skrzydla',
-    createLabel: 'Dodaj skrzydlo',
-    section: 'locations',
-    route: '/locations/wings',
-    description: 'Strefy i skrzydla przypisane do budynkow.'
-  },
-  {
     key: 'floors',
     label: 'Pietra',
     createLabel: 'Dodaj pietro',

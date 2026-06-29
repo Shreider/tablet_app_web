@@ -20,7 +20,7 @@ import {
   formatDate,
   formatDateTime
 } from '../components/AdminUi';
-import type { AdminRoom, AdminRoomsOptionsResponse, AdminScheduleEntry, AdminWingOption } from '../types';
+import type { AdminRoom, AdminRoomsOptionsResponse, AdminScheduleEntry } from '../types';
 
 interface RoomsState {
   loading: boolean;
@@ -51,16 +51,7 @@ const initialRoomForm: RoomFormPayload = {
   roomCode: '',
   displayName: '',
   buildingId: 0,
-  wingId: 0,
   floorId: 0
-};
-
-const filterWingsByBuilding = (wings: AdminWingOption[], buildingId: number): AdminWingOption[] => {
-  if (!buildingId) {
-    return wings;
-  }
-
-  return wings.filter((wing) => wing.buildingId === buildingId);
 };
 
 export function AdminRoomsPage(): JSX.Element {
@@ -70,14 +61,12 @@ export function AdminRoomsPage(): JSX.Element {
   const [options, setOptions] = useState<AdminRoomsOptionsResponse>({
     rooms: [],
     buildings: [],
-    wings: [],
     floors: []
   });
 
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
   const [buildingId, setBuildingId] = useState<number | null>(null);
-  const [wingId, setWingId] = useState<number | null>(null);
   const [floorId, setFloorId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('roomCode');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -118,7 +107,6 @@ export function AdminRoomsPage(): JSX.Element {
         limit: 10,
         search,
         buildingId,
-        wingId,
         floorId,
         sortBy,
         sortOrder
@@ -152,7 +140,7 @@ export function AdminRoomsPage(): JSX.Element {
       const payload = await fetchAdminRoomsOptions(token);
       setOptions(payload);
     } catch {
-      setOptions({ rooms: [], buildings: [], wings: [], floors: [] });
+      setOptions({ rooms: [], buildings: [], floors: [] });
     }
   };
 
@@ -164,7 +152,7 @@ export function AdminRoomsPage(): JSX.Element {
   useEffect(() => {
     void loadRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page, search, buildingId, wingId, floorId, sortBy, sortOrder]);
+  }, [token, page, search, buildingId, floorId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (!flashMessage) {
@@ -181,7 +169,6 @@ export function AdminRoomsPage(): JSX.Element {
     setFormState({
       ...initialRoomForm,
       buildingId: options.buildings[0]?.id ?? 0,
-      wingId: options.wings[0]?.id ?? 0,
       floorId: options.floors[0]?.id ?? 0
     });
     setFormError(null);
@@ -195,7 +182,6 @@ export function AdminRoomsPage(): JSX.Element {
       roomCode: room.roomCode,
       displayName: room.displayName,
       buildingId: room.buildingId,
-      wingId: room.wingId,
       floorId: room.floorId
     });
     setFormError(null);
@@ -206,7 +192,6 @@ export function AdminRoomsPage(): JSX.Element {
     if (!payload.roomCode.trim()) return 'Podaj kod sali.';
     if (!payload.displayName.trim()) return 'Podaj nazwe wyswietlana sali.';
     if (!payload.buildingId) return 'Wybierz budynek z listy.';
-    if (!payload.wingId) return 'Wybierz skrzydlo z listy.';
     if (!payload.floorId) return 'Wybierz pietro z listy.';
     return null;
   };
@@ -319,14 +304,6 @@ export function AdminRoomsPage(): JSX.Element {
   };
 
   const totalLabel = useMemo(() => `Lacznie rekordow: ${state.total}`, [state.total]);
-  const filteredWings = useMemo(
-    () => filterWingsByBuilding(options.wings, buildingId ?? 0),
-    [options.wings, buildingId]
-  );
-  const formWings = useMemo(
-    () => filterWingsByBuilding(options.wings, formState.buildingId),
-    [options.wings, formState.buildingId]
-  );
 
   return (
     <div className="space-y-4">
@@ -339,7 +316,7 @@ export function AdminRoomsPage(): JSX.Element {
           </button>
         }
       >
-        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-7">
+        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-6">
           <label className="admin-field xl:col-span-2">
             <span className="admin-label">Wyszukiwarka</span>
             <div className="flex gap-2">
@@ -347,7 +324,7 @@ export function AdminRoomsPage(): JSX.Element {
                 className="admin-input"
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="kod, nazwa, budynek, skrzydlo"
+                placeholder="kod, nazwa, budynek"
               />
               <button
                 type="button"
@@ -371,32 +348,12 @@ export function AdminRoomsPage(): JSX.Element {
                 const nextBuildingId = event.target.value ? Number(event.target.value) : null;
                 setPage(1);
                 setBuildingId(nextBuildingId);
-                setWingId(null);
               }}
             >
               <option value="">Wszystkie</option>
               {options.buildings.map((building) => (
                 <option key={building.id} value={building.id}>
                   {building.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-label">Skrzydlo</span>
-            <select
-              className="admin-input"
-              value={wingId ?? ''}
-              onChange={(event) => {
-                setPage(1);
-                setWingId(event.target.value ? Number(event.target.value) : null);
-              }}
-            >
-              <option value="">Wszystkie</option>
-              {filteredWings.map((wing) => (
-                <option key={wing.id} value={wing.id}>
-                  {wing.name} ({wing.buildingName})
                 </option>
               ))}
             </select>
@@ -476,7 +433,6 @@ export function AdminRoomsPage(): JSX.Element {
                     <th>Kod</th>
                     <th>Nazwa</th>
                     <th>Budynek</th>
-                    <th>Skrzydlo</th>
                     <th>Pietro</th>
                     <th>Wpisy</th>
                     <th>Aktualizacja</th>
@@ -489,7 +445,6 @@ export function AdminRoomsPage(): JSX.Element {
                       <td>{room.roomCode}</td>
                       <td>{room.displayName}</td>
                       <td>{room.buildingName}</td>
-                      <td>{room.wingName}</td>
                       <td>{room.floorLabel}</td>
                       <td>{room.entriesCount}</td>
                       <td>{formatDateTime(room.updatedAt)}</td>
@@ -567,7 +522,7 @@ export function AdminRoomsPage(): JSX.Element {
             />
           </label>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <label className="admin-field">
               <span className="admin-label">Budynek</span>
               <select
@@ -575,13 +530,9 @@ export function AdminRoomsPage(): JSX.Element {
                 value={formState.buildingId}
                 onChange={(event) => {
                   const nextBuildingId = Number(event.target.value);
-                  const nextWings = filterWingsByBuilding(options.wings, nextBuildingId);
                   setFormState((prev) => ({
                     ...prev,
-                    buildingId: nextBuildingId,
-                    wingId: nextWings.some((wing) => wing.id === prev.wingId)
-                      ? prev.wingId
-                      : (nextWings[0]?.id ?? 0)
+                    buildingId: nextBuildingId
                   }));
                 }}
                 required
@@ -590,24 +541,6 @@ export function AdminRoomsPage(): JSX.Element {
                 {options.buildings.map((building) => (
                   <option key={building.id} value={building.id}>
                     {building.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="admin-field">
-              <span className="admin-label">Skrzydlo</span>
-              <select
-                className="admin-input"
-                value={formState.wingId}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, wingId: Number(event.target.value) }))
-                }
-                required
-              >
-                <option value={0}>Wybierz skrzydlo</option>
-                {formWings.map((wing) => (
-                  <option key={wing.id} value={wing.id}>
-                    {wing.name}
                   </option>
                 ))}
               </select>
@@ -645,7 +578,7 @@ export function AdminRoomsPage(): JSX.Element {
         title={detailsState.room ? `Szczegoly sali ${detailsState.room.roomCode}` : 'Szczegoly sali'}
         message="Powiazane wpisy harmonogramu dla wybranej sali."
         confirmLabel="Zamknij"
-        cancelLabel="Zamknij"
+        hideCancel
         onCancel={() => setDetailsOpen(false)}
         onConfirm={() => setDetailsOpen(false)}
       >
@@ -661,9 +594,6 @@ export function AdminRoomsPage(): JSX.Element {
               </p>
               <p className="m-0">
                 Budynek: <strong>{detailsState.room.buildingName}</strong>
-              </p>
-              <p className="m-0">
-                Skrzydlo: <strong>{detailsState.room.wingName}</strong>
               </p>
               <p className="m-0">
                 Pietro: <strong>{detailsState.room.floorLabel}</strong>

@@ -30,7 +30,6 @@ interface RoomMetadataSource {
   room_code: string;
   display_name: string;
   building_name: string;
-  wing_name: string;
   floor_label: string;
 }
 
@@ -38,7 +37,6 @@ export const mapRoomMetadata = (roomRow: RoomMetadataSource) => ({
   roomId: roomRow.room_code,
   name: roomRow.display_name,
   building: roomRow.building_name,
-  wing: roomRow.wing_name,
   floor: roomRow.floor_label
 });
 
