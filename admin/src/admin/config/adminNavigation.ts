@@ -129,6 +129,10 @@ export const adminNavGroups: AdminNavGroup[] = [
   {
     label: 'Kadra i oferta',
     items: teachingNavItems
+  },
+  {
+    label: 'Konflikty',
+    items: [{ to: '/conflicts', label: 'Konflikty', pageTitle: 'Konflikty harmonogramu' }]
   }
 ];
 

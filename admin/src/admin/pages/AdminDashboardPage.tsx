@@ -79,7 +79,7 @@ export function AdminDashboardPage(): JSX.Element {
     );
   }
 
-  const { stats, warnings, recentRooms, recentEntries } = state.data;
+  const { stats, conflicts, warnings, recentRooms, recentEntries } = state.data;
 
   return (
     <div className="grid gap-4 lg:gap-5">
@@ -88,7 +88,9 @@ export function AdminDashboardPage(): JSX.Element {
         <DashboardStatCard label="Wpisy harmonogramu" value={stats.scheduleEntries} tone="ok" />
         <DashboardStatCard label="Dzisiaj" value={stats.todayEntries} tone="info" />
         <DashboardStatCard label="Sale bez wpisów" value={stats.roomsWithoutEntries} tone="warn" />
-        <DashboardStatCard label="Konflikty czasowe" value={stats.overlappingEntries} tone="critical" />
+        <Link to="/conflicts" className="no-underline">
+          <DashboardStatCard label="Konflikty czasowe" value={stats.overlappingEntries} tone="critical" clickable />
+        </Link>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.3fr_minmax(0,1fr)]">
@@ -128,19 +130,50 @@ export function AdminDashboardPage(): JSX.Element {
                 Brak krytycznych problemów.
               </p>
             ) : (
-              warnings.map((warning) => (
-                <div
-                  key={warning.code}
-                  className="rounded-xl border border-[#4b2d3a] bg-[#291a24] px-3 py-2"
-                >
-                  <div className="mb-1">
-                    <StatusBadge tone={warning.level === 'critical' ? 'critical' : 'warn'}>
-                      {warning.level === 'critical' ? 'Krytyczne' : 'Uwaga'}
-                    </StatusBadge>
+              <>
+                {warnings
+                  .filter((w) => w.level === 'warning')
+                  .map((warning) => (
+                    <div
+                      key={warning.code}
+                      className="rounded-xl border border-[#5f4b29] bg-[#2a2210] px-3 py-2"
+                    >
+                      <div className="mb-1">
+                        <StatusBadge tone="warn">Uwaga</StatusBadge>
+                      </div>
+                      <p className="m-0 text-sm text-[#ffd4a0]">{warning.message}</p>
+                    </div>
+                  ))}
+                {conflicts.length > 0 && (
+                  <div className="rounded-xl border border-[#4b2d3a] bg-[#291a24] px-3 py-2">
+                    <div className="mb-2">
+                      <StatusBadge tone="critical">Krytyczne</StatusBadge>
+                    </div>
+                    <p className="m-0 mb-2 text-sm font-medium text-[#ffc5d4]">
+                      Wykryto {conflicts.length} {conflicts.length === 1 ? 'konflikt' : 'konflikty'} harmonogramu:
+                    </p>
+                    <div className="space-y-1.5">
+                      {conflicts.map((pair) => (
+                        <div
+                          key={`${pair.entryA.id}-${pair.entryB.id}`}
+                          className="rounded-lg border border-[#3a2030] bg-[#1f1018] px-2.5 py-1.5 text-xs text-[#f0b8cc]"
+                        >
+                          <span className="font-semibold">{pair.entryA.roomCode}</span>{' '}
+                          {pair.entryA.eventDate} — wpis #{pair.entryA.id} (
+                          {pair.entryA.startTime}–{pair.entryA.endTime}) koliduje z #{pair.entryB.id} (
+                          {pair.entryB.startTime}–{pair.entryB.endTime})
+                        </div>
+                      ))}
+                    </div>
+                    <Link
+                      to="/conflicts"
+                      className="mt-2 inline-block text-xs text-[#d080a0] underline hover:text-[#f0b8cc]"
+                    >
+                      Przejdź do zarządzania konfliktami →
+                    </Link>
                   </div>
-                  <p className="m-0 text-sm text-[#ffc5d4]">{warning.message}</p>
-                </div>
-              ))
+                )}
+              </>
             )}
           </div>
         </AdminPanel>
@@ -179,11 +212,13 @@ export function AdminDashboardPage(): JSX.Element {
 function DashboardStatCard({
   label,
   value,
-  tone
+  tone,
+  clickable = false
 }: {
   label: string;
   value: number;
   tone: 'info' | 'ok' | 'warn' | 'critical';
+  clickable?: boolean;
 }): JSX.Element {
   const toneClassName =
     tone === 'ok'
@@ -195,7 +230,9 @@ function DashboardStatCard({
           : 'border-[#2f4670] bg-[#101f36] text-[#b9d5ff]';
 
   return (
-    <article className={`rounded-2xl border px-4 py-4 ${toneClassName}`}>
+    <article
+      className={`rounded-2xl border px-4 py-4 ${toneClassName}${clickable ? ' cursor-pointer transition hover:-translate-y-0.5 hover:opacity-90' : ''}`}
+    >
       <p className="m-0 text-xs uppercase tracking-[0.1em] opacity-90">{label}</p>
       <p className="mt-2 text-[1.7rem] font-semibold leading-none">{value}</p>
     </article>

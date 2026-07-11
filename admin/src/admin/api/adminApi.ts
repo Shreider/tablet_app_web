@@ -1,4 +1,5 @@
 import type {
+  AdminConflictsResponse,
   AdminDashboardResponse,
   AdminReferenceDependency,
   AdminReferenceEntity,
@@ -322,6 +323,16 @@ export const deleteAdminScheduleEntry = async (
   });
 
   return parseJsonResponse<{ deleted: boolean }>(response);
+};
+
+export const fetchAdminConflicts = async (token: string): Promise<AdminConflictsResponse> => {
+  const response = await fetch(`${API_BASE_URL}/admin/conflicts`, {
+    headers: {
+      ...buildAuthHeaders(token)
+    }
+  });
+
+  return parseJsonResponse<AdminConflictsResponse>(response);
 };
 
 export const fetchAdminReferencesDataset = async (

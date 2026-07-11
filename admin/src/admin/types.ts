@@ -89,6 +89,7 @@ export interface AdminDashboardResponse {
   generatedAt: string;
   date: string;
   stats: AdminDashboardStats;
+  conflicts: AdminConflictPair[];
   recentRooms: Array<{
     id: number;
     room_code: string;
@@ -175,4 +176,36 @@ export interface AdminReferenceDependency {
   key: string;
   count: number;
   message: string;
+}
+
+export interface AdminConflictEntry {
+  id: number;
+  roomId: number;
+  roomCode: string;
+  roomDisplayName: string;
+  eventDate: string;
+  title: string;
+  lecturerId: number;
+  lecturerName: string;
+  studentGroupId: number;
+  studentGroupName: string;
+  classTypeId: number;
+  classTypeName: string;
+  subjectId: number;
+  subjectCode: string;
+  subjectName: string;
+  startTime: string;
+  endTime: string;
+  description: string;
+  note: string | null;
+}
+
+export interface AdminConflictPair {
+  entryA: AdminConflictEntry;
+  entryB: AdminConflictEntry;
+}
+
+export interface AdminConflictsResponse {
+  conflicts: AdminConflictPair[];
+  total: number;
 }
