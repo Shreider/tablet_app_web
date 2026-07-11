@@ -1,0 +1,2 @@
+-- Schema is managed by Prisma migrations.
+-- Keep this file so Docker initialization order remains stable.

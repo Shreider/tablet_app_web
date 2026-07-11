@@ -14,7 +14,7 @@ export function ScheduleSidebar({ schedule, onSelect }: ScheduleSidebarProps): J
     >
       <div>
         <p className="m-0 text-[0.9rem] font-bold uppercase tracking-[0.11em] text-muted">Harmonogram</p>
-        <h2 className="mb-1 mt-1.5 text-2xl font-bold text-foreground">Nastepne zajęcia</h2>
+        <h2 className="mb-1 mt-1.5 text-2xl font-bold text-foreground">Następne zajęcia</h2>
       </div>
 
       <div className="pointer-events-none mt-3 h-4 bg-gradient-to-b from-surface/95 to-transparent" />
