@@ -107,7 +107,6 @@ export interface FetchAdminRoomsParams {
   page?: number;
   limit?: number;
   search?: string;
-  buildingId?: number | null;
   floorId?: number | null;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -153,7 +152,6 @@ export const fetchAdminRoomDetails = async (
 export interface RoomFormPayload {
   roomCode: string;
   displayName: string;
-  buildingId: number;
   floorId: number;
 }
 

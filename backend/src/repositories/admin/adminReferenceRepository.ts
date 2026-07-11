@@ -10,7 +10,6 @@ import type {
 } from '../../types/domain.js';
 
 export type AdminReferenceEntity =
-  | 'buildings'
   | 'floors'
   | 'lecturers'
   | 'student-groups'
@@ -72,7 +71,6 @@ export type ReferencePayload =
   | SubjectPayload;
 
 export interface ReferenceDataset {
-  buildings: BuildingRow[];
   floors: FloorRow[];
   lecturers: LecturerRow[];
   studentGroups: StudentGroupRow[];
@@ -188,9 +186,8 @@ const toSubjectRow = (row: {
 });
 
 export const listReferenceDataset = async (): Promise<ReferenceDataset> => {
-  const [buildings, floors, lecturers, studentGroups, classTypes, fieldsOfStudy, subjects] =
+  const [floors, lecturers, studentGroups, classTypes, fieldsOfStudy, subjects] =
     await Promise.all([
-      prismaAdmin.building.findMany({ orderBy: { name: 'asc' } }),
       prismaAdmin.floor.findMany({ orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }] }),
       prismaAdmin.lecturer.findMany({ orderBy: { fullName: 'asc' } }),
       prismaAdmin.studentGroup.findMany({ orderBy: { name: 'asc' } }),
@@ -209,7 +206,6 @@ export const listReferenceDataset = async (): Promise<ReferenceDataset> => {
     ]);
 
   return {
-    buildings: buildings.map(toBuildingRow),
     floors: floors.map(toFloorRow),
     lecturers: lecturers.map(toLecturerRow),
     studentGroups: studentGroups.map(toStudentGroupRow),
@@ -224,17 +220,6 @@ export const createReferenceRecord = async (
   payload: ReferencePayload
 ): Promise<number> => {
   switch (entity) {
-    case 'buildings': {
-      const data = payload as BuildingPayload;
-      const row = await prismaAdmin.building.create({
-        data: {
-          name: data.name,
-          isActive: data.isActive
-        },
-        select: { id: true }
-      });
-      return row.id;
-    }
     case 'floors': {
       const data = payload as FloorPayload;
       const row = await prismaAdmin.floor.create({
@@ -315,18 +300,6 @@ export const updateReferenceRecord = async (
   payload: ReferencePayload
 ): Promise<number> => {
   switch (entity) {
-    case 'buildings': {
-      const data = payload as BuildingPayload;
-      const row = await prismaAdmin.building.update({
-        where: { id: recordId },
-        data: {
-          name: data.name,
-          isActive: data.isActive
-        },
-        select: { id: true }
-      });
-      return row.id;
-    }
     case 'floors': {
       const data = payload as FloorPayload;
       const row = await prismaAdmin.floor.update({
@@ -412,10 +385,6 @@ export const deleteReferenceRecord = async (
   recordId: number
 ): Promise<number> => {
   switch (entity) {
-    case 'buildings': {
-      const row = await prismaAdmin.building.delete({ where: { id: recordId }, select: { id: true } });
-      return row.id;
-    }
     case 'floors': {
       const row = await prismaAdmin.floor.delete({ where: { id: recordId }, select: { id: true } });
       return row.id;
@@ -450,11 +419,6 @@ export const listReferenceDependencies = async (
   recordId: number
 ): Promise<ReferenceDependency[]> => {
   switch (entity) {
-    case 'buildings': {
-      const roomsCount = await prismaAdmin.room.count({ where: { buildingId: recordId } });
-
-      return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiązane sale' }] : [];
-    }
     case 'floors': {
       const roomsCount = await prismaAdmin.room.count({ where: { floorId: recordId } });
       return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiązane sale' }] : [];
@@ -489,8 +453,6 @@ export const existsReferenceRecord = async (
   recordId: number
 ): Promise<boolean> => {
   switch (entity) {
-    case 'buildings':
-      return Boolean(await prismaAdmin.building.findUnique({ where: { id: recordId }, select: { id: true } }));
     case 'floors':
       return Boolean(await prismaAdmin.floor.findUnique({ where: { id: recordId }, select: { id: true } }));
     case 'lecturers':

@@ -24,14 +24,14 @@ export const getAdminDashboard: RequestHandler = async (_req, res, next) => {
         ? {
             code: 'ROOMS_WITHOUT_SCHEDULE',
             level: 'warning',
-            message: `Rooms without schedule entries: ${stats.roomsWithoutEntries}.`
+            message: `Sale bez wpisów harmonogramu: ${stats.roomsWithoutEntries}.`
           }
         : null,
       stats.overlappingEntries > 0
         ? {
             code: 'OVERLAPPING_SCHEDULE',
             level: 'critical',
-            message: `Detected overlapping schedule pairs: ${stats.overlappingEntries}.`
+            message: `Wykryto ${stats.overlappingEntries} nakładających się par terminów.`
           }
         : null
     ].filter((warning): warning is DashboardWarning => warning !== null);

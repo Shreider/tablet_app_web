@@ -12,7 +12,6 @@ import {
 } from '../../repositories/admin/adminReferenceRepository.js';
 import { createError } from '../../types/errors.js';
 import {
-  mapBuildingRecord,
   mapClassTypeRecord,
   mapFieldOfStudyRecord,
   mapFloorRecord,
@@ -24,7 +23,6 @@ import { asNonEmptyString, asPositiveInteger, parseBooleanFlag } from '../../uti
 import { handleAdminError } from './adminControllerUtils.js';
 
 const REFERENCE_ENTITIES = new Set<AdminReferenceEntity>([
-  'buildings',
   'floors',
   'lecturers',
   'student-groups',
@@ -61,11 +59,6 @@ const parseReferencePayload = (
   const isActive = parseBooleanFlag(data.isActive, true);
 
   switch (entity) {
-    case 'buildings':
-      return {
-        name: asNonEmptyString(data.name, 'name', 120),
-        isActive
-      };
     case 'floors':
       return {
         label: asNonEmptyString(data.label, 'label', 80),
@@ -133,7 +126,6 @@ export const getAdminReferencesDataset: RequestHandler = async (_req, res, next)
     const dataset = await listReferenceDataset();
 
     return res.status(200).json({
-      buildings: dataset.buildings.map(mapBuildingRecord),
       floors: dataset.floors.map(mapFloorRecord),
       lecturers: dataset.lecturers.map(mapLecturerRecord),
       studentGroups: dataset.studentGroups.map(mapStudentGroupRecord),

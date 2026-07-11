@@ -102,7 +102,6 @@ export interface AdminDashboardResponse {
 
 export interface AdminRoomsOptionsResponse {
   rooms: AdminRoomOption[];
-  buildings: AdminReferenceOption[];
   floors: AdminFloorOption[];
 }
 
@@ -112,14 +111,6 @@ export interface AdminScheduleOptionsResponse {
   studentGroups: AdminReferenceOption[];
   classTypes: AdminReferenceOption[];
   subjects: AdminSubject[];
-}
-
-export interface AdminBuilding {
-  id: number;
-  name: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface AdminFloor {
@@ -164,7 +155,6 @@ export interface AdminFieldOfStudy {
 }
 
 export interface AdminReferencesDatasetResponse {
-  buildings: AdminBuilding[];
   floors: AdminFloor[];
   lecturers: AdminLecturer[];
   studentGroups: AdminStudentGroup[];
@@ -174,7 +164,6 @@ export interface AdminReferencesDatasetResponse {
 }
 
 export type AdminReferenceEntity =
-  | 'buildings'
   | 'floors'
   | 'lecturers'
   | 'student-groups'

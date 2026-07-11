@@ -95,28 +95,28 @@ export function AdminDashboardPage(): JSX.Element {
         <AdminPanel
           title="Szybkie akcje"
           subtitle="Najczęściej używane obszary administracyjne"
-          actions={<span className="text-xs text-[#8ca0c4]">Live DB</span>}
+          actions={null}
         >
           <div className="grid gap-3 py-2 sm:grid-cols-2 xl:grid-cols-4">
             <QuickLinkCard
               title="Sale"
-              text="Dodawaj i edytuj sale wraz z lokalizacją: budynek i piętro."
+              text="Dodawaj i edytuj sale wraz z lokalizacją."
               to="/rooms"
             />
             <QuickLinkCard
               title="Harmonogram"
-              text="Prowadź wpisy zajęć, terminy oraz komplet relacji do sal i prowadzących."
+              text="Zarządzaj terminem zajęć."
               to="/schedule-entries"
             />
             <QuickLinkCard
-              title="Kadra i oferta"
-              text="Wykładowcy, grupy, typy zajęć, kierunki i przedmioty w jednym miejscu."
+              title="Wykładowcy"
+              text="Wykładowcy, grupy, typy zajęć, kierunki i przedmioty."
               to="/teaching/lecturers"
             />
             <QuickLinkCard
               title="Lokalizacje"
-              text="Budynki i piętra wykorzystywane przez sale i harmonogram."
-              to="/locations/buildings"
+              text="Piętra i edycja."
+              to="/locations/floors"
             />
           </div>
         </AdminPanel>
@@ -146,30 +146,7 @@ export function AdminDashboardPage(): JSX.Element {
         </AdminPanel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <AdminPanel title="Ostatnie modyfikacje sal" subtitle="Najświeższe rekordy rooms">
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Kod</th>
-                  <th>Nazwa</th>
-                  <th>Ostatnia zmiana</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentRooms.map((room) => (
-                  <tr key={room.id}>
-                    <td>{room.room_code}</td>
-                    <td>{room.display_name}</td>
-                    <td>{formatDateTime(room.updated_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </AdminPanel>
-
+      <section className="grid gap-4">
         <AdminPanel title="Ostatnio dodane wpisy" subtitle="Nowe rekordy harmonogramu">
           <div className="admin-table-wrap">
             <table className="admin-table">

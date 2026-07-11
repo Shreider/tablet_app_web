@@ -149,7 +149,7 @@ export const asIsoDate = (value: unknown, fieldName: string): string => {
   const normalized = asNonEmptyString(value, fieldName);
 
   if (!DATE_PATTERN.test(normalized)) {
-    throw createError(`${fieldName} must match YYYY-MM-DD.`, 'VALIDATION_ERROR');
+    throw createError(`Pole ${fieldName} musi mieć format RRRR-MM-DD.`, 'VALIDATION_ERROR');
   }
 
   const [year, month, day] = normalized.split('-').map(Number);
@@ -160,7 +160,7 @@ export const asIsoDate = (value: unknown, fieldName: string): string => {
     utcDate.getUTCMonth() !== month - 1 ||
     utcDate.getUTCDate() !== day
   ) {
-    throw createError(`${fieldName} is not a valid calendar date.`, 'VALIDATION_ERROR');
+    throw createError(`Pole ${fieldName} nie zawiera poprawnej daty.`, 'VALIDATION_ERROR');
   }
 
   return normalized;

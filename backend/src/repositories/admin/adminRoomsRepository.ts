@@ -15,7 +15,6 @@ type RoomSortBy =
   | 'id'
   | 'roomCode'
   | 'displayName'
-  | 'buildingName'
   | 'floorLabel'
   | 'createdAt'
   | 'updatedAt'
@@ -26,7 +25,6 @@ interface ListAdminRoomsParams {
   limit: number;
   offset: number;
   search: string;
-  buildingId: number | null;
   floorId: number | null;
   sortBy: string;
   sortOrder: SortOrder;
@@ -109,22 +107,16 @@ const mapEntrySummary = (
 
 const buildRoomWhere = ({
   search,
-  buildingId,
   floorId
-}: Pick<ListAdminRoomsParams, 'search' | 'buildingId' | 'floorId'>): Prisma.RoomWhereInput => {
+}: Pick<ListAdminRoomsParams, 'search' | 'floorId'>): Prisma.RoomWhereInput => {
   const where: Prisma.RoomWhereInput = {};
 
   if (search) {
     where.OR = [
       { roomCode: { contains: search, mode: 'insensitive' } },
       { displayName: { contains: search, mode: 'insensitive' } },
-      { building: { name: { contains: search, mode: 'insensitive' } } },
       { floor: { label: { contains: search, mode: 'insensitive' } } }
     ];
-  }
-
-  if (buildingId) {
-    where.buildingId = buildingId;
   }
 
   if (floorId) {
@@ -144,8 +136,6 @@ const resolveOrderBy = (sortBy: string, sortOrder: SortOrder): Prisma.RoomOrderB
       return [{ roomCode: sortOrder }, { id: 'asc' }];
     case 'displayName':
       return [{ displayName: sortOrder }, { roomCode: 'asc' }];
-    case 'buildingName':
-      return [{ building: { name: sortOrder } }, { roomCode: 'asc' }];
     case 'floorLabel':
       return [{ floor: { label: sortOrder } }, { roomCode: 'asc' }];
     case 'createdAt':
@@ -164,12 +154,11 @@ export const listAdminRooms = async ({
   limit,
   offset,
   search,
-  buildingId,
   floorId,
   sortBy,
   sortOrder
 }: ListAdminRoomsParams): Promise<PaginationResult<RoomWithEntriesCountRow>> => {
-  const where = buildRoomWhere({ search, buildingId, floorId });
+  const where = buildRoomWhere({ search, floorId });
 
   const [total, rows] = await Promise.all([
     prismaAdmin.room.count({ where }),

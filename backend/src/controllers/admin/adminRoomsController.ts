@@ -28,33 +28,44 @@ const ROOM_SORT_FIELDS = new Set([
   'id',
   'roomCode',
   'displayName',
-  'buildingName',
   'floorLabel',
   'createdAt',
   'updatedAt',
   'entriesCount'
 ]);
 
-const parseRoomPayload = (payload: unknown): RoomPayload => {
+interface RoomFormData {
+  roomCode: string;
+  displayName: string;
+  floorId: number;
+}
+
+const parseRoomFormData = (payload: unknown): RoomFormData => {
   const data = (payload ?? {}) as Record<string, unknown>;
 
   return {
     roomCode: asNonEmptyString(data.roomCode, 'roomCode', 32),
     displayName: asNonEmptyString(data.displayName, 'displayName', 120),
-    buildingId: asPositiveInteger(data.buildingId, 'buildingId'),
     floorId: asPositiveInteger(data.floorId, 'floorId')
   };
 };
 
-const validateRoomRelations = async (payload: RoomPayload): Promise<void> => {
-  const [building, floor] = await Promise.all([
-    prismaAdmin.building.findUnique({ where: { id: payload.buildingId }, select: { id: true, isActive: true } }),
-    prismaAdmin.floor.findUnique({ where: { id: payload.floorId }, select: { id: true, isActive: true } })
-  ]);
+const resolveDefaultBuildingId = async (): Promise<number> => {
+  const building = await prismaAdmin.building.findFirst({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+    select: { id: true }
+  });
 
-  if (!building || !building.isActive) {
-    throw createError('buildingId does not point to an active building.', 'VALIDATION_ERROR');
+  if (!building) {
+    throw createError('No active building found in the system.', 'VALIDATION_ERROR');
   }
+
+  return building.id;
+};
+
+const validateFloor = async (floorId: number): Promise<void> => {
+  const floor = await prismaAdmin.floor.findUnique({ where: { id: floorId }, select: { id: true, isActive: true } });
 
   if (!floor || !floor.isActive) {
     throw createError('floorId does not point to an active floor.', 'VALIDATION_ERROR');
@@ -82,7 +93,6 @@ export const getAdminRoomsList: RequestHandler = async (req, res, next) => {
     const sortBy = parseRoomSortBy(req.query.sortBy);
 
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
-    const buildingId = req.query.buildingId ? asPositiveInteger(req.query.buildingId, 'buildingId') : null;
     const floorId = req.query.floorId ? asPositiveInteger(req.query.floorId, 'floorId') : null;
 
     const result = await listAdminRooms({
@@ -90,7 +100,6 @@ export const getAdminRoomsList: RequestHandler = async (req, res, next) => {
       limit,
       offset,
       search,
-      buildingId,
       floorId,
       sortBy,
       sortOrder
@@ -114,7 +123,6 @@ export const getAdminRoomsOptions: RequestHandler = async (_req, res, next) => {
 
     return res.status(200).json({
       rooms: roomOptions.map(mapRoomOption),
-      buildings: facets.buildings,
       floors: facets.floors
     });
   } catch (error) {
@@ -148,8 +156,10 @@ export const getAdminRoomDetails: RequestHandler = async (req, res, next) => {
 
 export const createAdminRoomRecord: RequestHandler = async (req, res, next) => {
   try {
-    const payload = parseRoomPayload(req.body);
-    await validateRoomRelations(payload);
+    const form = parseRoomFormData(req.body);
+    await validateFloor(form.floorId);
+    const buildingId = await resolveDefaultBuildingId();
+    const payload: RoomPayload = { ...form, buildingId };
 
     const roomId = await createAdminRoom(payload);
     const createdRoom = await findAdminRoomById(roomId);
@@ -174,8 +184,9 @@ export const updateAdminRoomRecord: RequestHandler = async (req, res, next) => {
       });
     }
 
-    const payload = parseRoomPayload(req.body);
-    await validateRoomRelations(payload);
+    const form = parseRoomFormData(req.body);
+    await validateFloor(form.floorId);
+    const payload: RoomPayload = { ...form, buildingId: existing.building_id };
 
     await updateAdminRoom(roomId, payload);
 

@@ -13,14 +13,6 @@ export interface AdminEntityMeta {
 
 export const adminEntityMetaList: AdminEntityMeta[] = [
   {
-    key: 'buildings',
-    label: 'Budynki',
-    createLabel: 'Dodaj budynek',
-    section: 'locations',
-    route: '/locations/buildings',
-    description: 'Budynki dostępne w systemie rezerwacji i harmonogramie.'
-  },
-  {
     key: 'floors',
     label: 'Piętra',
     createLabel: 'Dodaj piętro',
@@ -121,7 +113,7 @@ const teachingNavItems: AdminNavItem[] = adminEntityKeysBySection.teaching.map((
 export const adminNavGroups: AdminNavGroup[] = [
   {
     label: 'Start',
-    items: [{ to: '/dashboard', label: 'Dashboard', pageTitle: 'Dashboard administracyjny' }]
+    items: [{ to: '/dashboard', label: 'Panel główny', pageTitle: 'Panel główny' }]
   },
   {
     label: 'Plan zajęć',

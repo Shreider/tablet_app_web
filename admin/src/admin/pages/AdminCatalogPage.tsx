@@ -77,8 +77,6 @@ const initialDatasetState: DatasetState = {
 
 const getDatasetCount = (data: AdminReferencesDatasetResponse, entity: AdminReferenceEntity): number => {
   switch (entity) {
-    case 'buildings':
-      return data.buildings.length;
     case 'floors':
       return data.floors.length;
     case 'lecturers':
@@ -174,8 +172,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     }
 
     switch (selectedEntity) {
-      case 'buildings':
-        return state.data.buildings;
       case 'floors':
         return state.data.floors;
       case 'lecturers':
@@ -234,8 +230,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     data: ReferenceFormState
   ): Record<string, unknown> => {
     switch (entityKey) {
-      case 'buildings':
-        return { name: data.name.trim(), isActive: data.isActive };
       case 'floors':
         return {
           label: data.label.trim(),
@@ -264,7 +258,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
 
   const validateReferenceForm = (entityKey: AdminReferenceEntity, data: ReferenceFormState): string | null => {
     if (
-      entityKey === 'buildings' ||
       entityKey === 'student-groups' ||
       entityKey === 'class-types' ||
       entityKey === 'fields-of-study'
@@ -423,7 +416,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     <div className="space-y-4">
       <AdminPanel
         title={currentMeta.label}
-        subtitle={`${sectionLabelMap[section]}. ${currentMeta.description} Aktywne: ${activeCount} / ${selectedRows.length}`}
+        subtitle={`${sectionLabelMap[section]}. ${currentMeta.description}`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
             {currentMeta.createLabel}

@@ -50,7 +50,6 @@ const initialRoomsState: RoomsState = {
 const initialRoomForm: RoomFormPayload = {
   roomCode: '',
   displayName: '',
-  buildingId: 0,
   floorId: 0
 };
 
@@ -60,13 +59,11 @@ export function AdminRoomsPage(): JSX.Element {
   const [state, setState] = useState<RoomsState>(initialRoomsState);
   const [options, setOptions] = useState<AdminRoomsOptionsResponse>({
     rooms: [],
-    buildings: [],
     floors: []
   });
 
   const [searchDraft, setSearchDraft] = useState('');
   const [search, setSearch] = useState('');
-  const [buildingId, setBuildingId] = useState<number | null>(null);
   const [floorId, setFloorId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState('roomCode');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -106,7 +103,6 @@ export function AdminRoomsPage(): JSX.Element {
         page,
         limit: 10,
         search,
-        buildingId,
         floorId,
         sortBy,
         sortOrder
@@ -140,7 +136,7 @@ export function AdminRoomsPage(): JSX.Element {
       const payload = await fetchAdminRoomsOptions(token);
       setOptions(payload);
     } catch {
-      setOptions({ rooms: [], buildings: [], floors: [] });
+      setOptions({ rooms: [], floors: [] });
     }
   };
 
@@ -152,7 +148,7 @@ export function AdminRoomsPage(): JSX.Element {
   useEffect(() => {
     void loadRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page, search, buildingId, floorId, sortBy, sortOrder]);
+  }, [token, page, search, floorId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (!flashMessage) {
@@ -168,7 +164,6 @@ export function AdminRoomsPage(): JSX.Element {
     setEditingRoom(null);
     setFormState({
       ...initialRoomForm,
-      buildingId: options.buildings[0]?.id ?? 0,
       floorId: options.floors[0]?.id ?? 0
     });
     setFormError(null);
@@ -181,7 +176,6 @@ export function AdminRoomsPage(): JSX.Element {
     setFormState({
       roomCode: room.roomCode,
       displayName: room.displayName,
-      buildingId: room.buildingId,
       floorId: room.floorId
     });
     setFormError(null);
@@ -191,7 +185,6 @@ export function AdminRoomsPage(): JSX.Element {
   const validateRoomForm = (payload: RoomFormPayload): string | null => {
     if (!payload.roomCode.trim()) return 'Podaj kod sali.';
     if (!payload.displayName.trim()) return 'Podaj nazwę wyświetlaną sali.';
-    if (!payload.buildingId) return 'Wybierz budynek z listy.';
     if (!payload.floorId) return 'Wybierz piętro z listy.';
     return null;
   };
@@ -324,7 +317,7 @@ export function AdminRoomsPage(): JSX.Element {
                 className="admin-input"
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="kod, nazwa, budynek"
+                placeholder="kod, nazwa"
               />
               <button
                 type="button"
@@ -337,26 +330,6 @@ export function AdminRoomsPage(): JSX.Element {
                 Szukaj
               </button>
             </div>
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-label">Budynek</span>
-            <select
-              className="admin-input"
-              value={buildingId ?? ''}
-              onChange={(event) => {
-                const nextBuildingId = event.target.value ? Number(event.target.value) : null;
-                setPage(1);
-                setBuildingId(nextBuildingId);
-              }}
-            >
-              <option value="">Wszystkie</option>
-              {options.buildings.map((building) => (
-                <option key={building.id} value={building.id}>
-                  {building.name}
-                </option>
-              ))}
-            </select>
           </label>
 
           <label className="admin-field">
@@ -390,7 +363,6 @@ export function AdminRoomsPage(): JSX.Element {
             >
               <option value="roomCode">Kod sali</option>
               <option value="displayName">Nazwa</option>
-              <option value="buildingName">Budynek</option>
               <option value="entriesCount">Liczba wpisów</option>
               <option value="updatedAt">Data modyfikacji</option>
             </select>
@@ -432,7 +404,6 @@ export function AdminRoomsPage(): JSX.Element {
                   <tr>
                     <th>Kod</th>
                     <th>Nazwa</th>
-                    <th>Budynek</th>
                     <th>Piętro</th>
                     <th>Wpisy</th>
                     <th>Aktualizacja</th>
@@ -444,7 +415,6 @@ export function AdminRoomsPage(): JSX.Element {
                     <tr key={room.id}>
                       <td>{room.roomCode}</td>
                       <td>{room.displayName}</td>
-                      <td>{room.buildingName}</td>
                       <td>{room.floorLabel}</td>
                       <td>{room.entriesCount}</td>
                       <td>{formatDateTime(room.updatedAt)}</td>
@@ -486,7 +456,7 @@ export function AdminRoomsPage(): JSX.Element {
       <ConfirmModal
         open={formOpen}
         title={formMode === 'create' ? 'Dodaj nową salę' : `Edytuj salę ${editingRoom?.roomCode ?? ''}`}
-        message="Wprowadź dane sali. Powiązania lokalizacji wybieraj z predefiniowanych list."
+        message="Wprowadź dane sali."
         confirmLabel={formMode === 'create' ? 'Dodaj salę' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
@@ -522,48 +492,24 @@ export function AdminRoomsPage(): JSX.Element {
             />
           </label>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="admin-field">
-              <span className="admin-label">Budynek</span>
-              <select
-                className="admin-input"
-                value={formState.buildingId}
-                onChange={(event) => {
-                  const nextBuildingId = Number(event.target.value);
-                  setFormState((prev) => ({
-                    ...prev,
-                    buildingId: nextBuildingId
-                  }));
-                }}
-                required
-              >
-                <option value={0}>Wybierz budynek</option>
-                {options.buildings.map((building) => (
-                  <option key={building.id} value={building.id}>
-                    {building.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="admin-field">
-              <span className="admin-label">Piętro</span>
-              <select
-                className="admin-input"
-                value={formState.floorId}
-                onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, floorId: Number(event.target.value) }))
-                }
-                required
-              >
-                <option value={0}>Wybierz piętro</option>
-                {options.floors.map((floor) => (
-                  <option key={floor.id} value={floor.id}>
-                    {floor.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <label className="admin-field">
+            <span className="admin-label">Piętro</span>
+            <select
+              className="admin-input"
+              value={formState.floorId}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, floorId: Number(event.target.value) }))
+              }
+              required
+            >
+              <option value={0}>Wybierz piętro</option>
+              {options.floors.map((floor) => (
+                <option key={floor.id} value={floor.id}>
+                  {floor.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {formError ? (
             <p className="m-0 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
@@ -591,9 +537,6 @@ export function AdminRoomsPage(): JSX.Element {
             <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
               <p className="m-0">
                 Nazwa: <strong>{detailsState.room.displayName}</strong>
-              </p>
-              <p className="m-0">
-                Budynek: <strong>{detailsState.room.buildingName}</strong>
               </p>
               <p className="m-0">
                 Piętro: <strong>{detailsState.room.floorLabel}</strong>
