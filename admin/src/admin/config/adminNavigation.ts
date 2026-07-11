@@ -18,39 +18,39 @@ export const adminEntityMetaList: AdminEntityMeta[] = [
     createLabel: 'Dodaj budynek',
     section: 'locations',
     route: '/locations/buildings',
-    description: 'Budynki dostepne w systemie rezerwacji i harmonogramie.'
+    description: 'Budynki dostępne w systemie rezerwacji i harmonogramie.'
   },
   {
     key: 'floors',
-    label: 'Pietra',
-    createLabel: 'Dodaj pietro',
+    label: 'Piętra',
+    createLabel: 'Dodaj piętro',
     section: 'locations',
     route: '/locations/floors',
-    description: 'Poziomy budynkow wykorzystywane przy przypisywaniu sal.'
+    description: 'Poziomy budynków wykorzystywane przy przypisywaniu sal.'
   },
   {
     key: 'lecturers',
-    label: 'Wykladowcy',
-    createLabel: 'Dodaj wykladowce',
+    label: 'Wykładowcy',
+    createLabel: 'Dodaj wykładowcę',
     section: 'teaching',
     route: '/teaching/lecturers',
-    description: 'Prowadzacy zajecia dostepni w harmonogramie.'
+    description: 'Prowadzący zajęcia dostępni w harmonogramie.'
   },
   {
     key: 'student-groups',
     label: 'Grupy',
-    createLabel: 'Dodaj grupe',
+    createLabel: 'Dodaj grupę',
     section: 'teaching',
     route: '/teaching/student-groups',
-    description: 'Grupy studentow przypisywane do wpisow zajec.'
+    description: 'Grupy studentów przypisywane do wpisów zajęć.'
   },
   {
     key: 'class-types',
-    label: 'Typy zajec',
-    createLabel: 'Dodaj typ zajec',
+    label: 'Typy zajęć',
+    createLabel: 'Dodaj typ zajęć',
     section: 'teaching',
     route: '/teaching/class-types',
-    description: 'Rodzaje zajec, np. wyklad, cwiczenia, laboratorium.'
+    description: 'Rodzaje zajęć, np. wykład, ćwiczenia, laboratorium.'
   },
   {
     key: 'fields-of-study',
@@ -58,7 +58,7 @@ export const adminEntityMetaList: AdminEntityMeta[] = [
     createLabel: 'Dodaj kierunek',
     section: 'teaching',
     route: '/teaching/fields-of-study',
-    description: 'Kierunki studiow powiazane z przedmiotami.'
+    description: 'Kierunki studiów powiązane z przedmiotami.'
   },
   {
     key: 'subjects',
@@ -66,7 +66,7 @@ export const adminEntityMetaList: AdminEntityMeta[] = [
     createLabel: 'Dodaj przedmiot',
     section: 'teaching',
     route: '/teaching/subjects',
-    description: 'Oferta przedmiotow z kodami i przypisaniem do kierunkow.'
+    description: 'Oferta przedmiotów z kodami i przypisaniem do kierunków.'
   }
 ];
 
@@ -124,9 +124,9 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [{ to: '/dashboard', label: 'Dashboard', pageTitle: 'Dashboard administracyjny' }]
   },
   {
-    label: 'Plan zajec',
+    label: 'Plan zajęć',
     items: [
-      { to: '/schedule-entries', label: 'Harmonogram', pageTitle: 'Harmonogram zajec' },
+      { to: '/schedule-entries', label: 'Harmonogram', pageTitle: 'Harmonogram zajęć' },
       { to: '/rooms', label: 'Sale', pageTitle: 'Sale' }
     ]
   },

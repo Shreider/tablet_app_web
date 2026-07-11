@@ -9,16 +9,16 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
     return (
       <section
         className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
-        aria-label="Aktualnie trwajace zajecia"
+        aria-label="Aktualnie trwające zajęcia"
       >
         <span className="inline-flex w-fit items-center rounded-full border border-border bg-surface/50 px-3 py-1 text-base font-semibold text-foreground">
-          Brak zajec
+          Brak zajęć
         </span>
         <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">
-          Brak zaplanowanych zajec na dzisiaj
+          Brak zaplanowanych zajęć na dzisiaj
         </h2>
         <p className="m-0 text-[1.05rem] leading-relaxed text-muted">
-          Sprawdz inna sale lub wykonaj ponowny seed danych testowych.
+          Sprawdź inną salę lub wykonaj ponowny seed danych testowych.
         </p>
       </section>
     );
@@ -28,13 +28,13 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
     lecture.status === 'current'
       ? 'Trwa teraz'
       : lecture.status === 'upcoming'
-        ? 'Najblizsze zajecia'
-        : 'Ostatnie zajecia';
+        ? 'Najbliższe zajęcia'
+        : 'Ostatnie zajęcia';
 
   return (
     <section
       className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
-      aria-label="Aktualnie trwajace zajecia"
+      aria-label="Aktualnie trwające zajęcia"
     >
       <span className="inline-flex w-fit items-center rounded-full border border-primary/60 bg-primary/25 px-3 py-1 text-base font-semibold text-foreground">
         {statusLabel}

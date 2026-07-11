@@ -76,7 +76,7 @@ export function RoomPage(): JSX.Element {
 
         setRequestState({
           isLoading: false,
-          errorMessage: 'Nie udalo sie polaczyc z backendem.',
+          errorMessage: 'Nie udało się połączyć z backendem.',
           statusCode: 500,
           data: null
         });
@@ -104,7 +104,7 @@ export function RoomPage(): JSX.Element {
   }, [requestState.data]);
 
   if (requestState.isLoading) {
-    return <FullScreenInfo title="Ladowanie sali" message={`Pobieranie harmonogramu dla sali ${normalizedRoomId}...`} />;
+    return <FullScreenInfo title="Ładowanie sali" message={`Pobieranie harmonogramu dla sali ${normalizedRoomId}...`} />;
   }
 
   if (requestState.errorMessage) {
@@ -112,16 +112,16 @@ export function RoomPage(): JSX.Element {
       return (
         <FullScreenInfo
           title="Sala nie istnieje"
-          message={`Sala ${normalizedRoomId} nie zostala znaleziona. Sprawdz numer sali i sprobuj ponownie.`}
+          message={`Sala ${normalizedRoomId} nie została znaleziona. Sprawdź numer sali i spróbuj ponownie.`}
         />
       );
     }
 
-    return <FullScreenInfo title="Blad" message={requestState.errorMessage} />;
+    return <FullScreenInfo title="Błąd" message={requestState.errorMessage} />;
   }
 
   if (!requestState.data) {
-    return <FullScreenInfo title="Brak danych" message="Backend nie zwrocil danych dla tej sali." />;
+    return <FullScreenInfo title="Brak danych" message="Backend nie zwrócił danych dla tej sali." />;
   }
 
   return (

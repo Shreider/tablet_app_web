@@ -24,7 +24,7 @@ const parseJsonResponse = async <T>(response: Response): Promise<T> => {
     const errorMessage =
       payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string'
         ? payload.message
-        : 'Nie udalo sie pobrac danych z API.';
+        : 'Nie udało się pobrać danych z API.';
 
     throw new ApiError(errorMessage, response.status);
   }

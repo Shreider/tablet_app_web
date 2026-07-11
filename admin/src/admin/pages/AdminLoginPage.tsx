@@ -33,7 +33,7 @@ export function AdminLoginPage(): JSX.Element {
       const message =
         error instanceof AdminApiError
           ? error.message
-          : 'Nie udalo sie zalogowac do panelu administratora.';
+          : 'Nie udało się zalogować do panelu administratora.';
       setErrorMessage(message);
     } finally {
       setSubmitting(false);
@@ -46,7 +46,7 @@ export function AdminLoginPage(): JSX.Element {
         <p className="m-0 text-xs uppercase tracking-[0.16em] text-[#8ca0c4]">Admin Access</p>
         <h1 className="mt-2 text-3xl font-semibold text-[#f1f6ff]">Logowanie administratora</h1>
         <p className="mt-2 text-sm text-[#9cb0d2]">
-          Podaj token administratora, aby zarzadzac danymi w bazie projektu.
+          Podaj token administratora, aby zarządzać danymi w bazie projektu.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
@@ -57,7 +57,7 @@ export function AdminLoginPage(): JSX.Element {
               type="password"
               value={tokenInput}
               onChange={(event) => setTokenInput(event.target.value)}
-              placeholder="Wprowadz ADMIN_TOKEN"
+              placeholder="Wprowadź ADMIN_TOKEN"
               autoComplete="current-password"
               required
             />

@@ -134,7 +134,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
       });
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac listy wpisow.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się pobrać listy wpisów.';
 
       setState((prev) => ({
         ...prev,
@@ -234,17 +234,17 @@ export function AdminScheduleEntriesPage(): JSX.Element {
   };
 
   const validateEntryForm = (payload: ScheduleEntryFormPayload): string | null => {
-    if (!payload.roomId || payload.roomId <= 0) return 'Wybierz sale.';
-    if (!payload.eventDate) return 'Podaj date zajec.';
-    if (!payload.lecturerId || payload.lecturerId <= 0) return 'Wybierz prowadzacego.';
-    if (!payload.studentGroupId || payload.studentGroupId <= 0) return 'Wybierz grupe.';
-    if (!payload.classTypeId || payload.classTypeId <= 0) return 'Wybierz typ zajec.';
+    if (!payload.roomId || payload.roomId <= 0) return 'Wybierz salę.';
+    if (!payload.eventDate) return 'Podaj datę zajęć.';
+    if (!payload.lecturerId || payload.lecturerId <= 0) return 'Wybierz prowadzącego.';
+    if (!payload.studentGroupId || payload.studentGroupId <= 0) return 'Wybierz grupę.';
+    if (!payload.classTypeId || payload.classTypeId <= 0) return 'Wybierz typ zajęć.';
     if (!payload.subjectId || payload.subjectId <= 0) return 'Wybierz przedmiot.';
-    if (!payload.startTime) return 'Podaj godzine rozpoczecia.';
-    if (!payload.endTime) return 'Podaj godzine zakonczenia.';
+    if (!payload.startTime) return 'Podaj godzinę rozpoczęcia.';
+    if (!payload.endTime) return 'Podaj godzinę zakończenia.';
     if (payload.startTime >= payload.endTime)
-      return 'Godzina rozpoczecia musi byc wczesniej niz zakonczenia.';
-    if (!payload.description.trim()) return 'Podaj opis zajec.';
+      return 'Godzina rozpoczęcia musi być wcześniej niż zakończenia.';
+    if (!payload.description.trim()) return 'Podaj opis zajęć.';
     return null;
   };
 
@@ -267,17 +267,17 @@ export function AdminScheduleEntriesPage(): JSX.Element {
     try {
       if (formMode === 'create') {
         await createAdminScheduleEntry(token, formState);
-        setFlashMessage('Wpis harmonogramu zostal dodany.');
+        setFlashMessage('Wpis harmonogramu został dodany.');
       } else if (editingEntry) {
         await updateAdminScheduleEntry(token, editingEntry.id, formState);
-        setFlashMessage(`Wpis #${editingEntry.id} zostal zaktualizowany.`);
+        setFlashMessage(`Wpis #${editingEntry.id} został zaktualizowany.`);
       }
 
       setFormOpen(false);
       await Promise.all([loadEntries(), loadOptions()]);
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac wpisu harmonogramu.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się zapisać wpisu harmonogramu.';
       setFormError(message);
     } finally {
       setFormBusy(false);
@@ -306,7 +306,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
       });
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac szczegolow wpisu.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się pobrać szczegółów wpisu.';
 
       setDetailsState({
         loading: false,
@@ -327,24 +327,24 @@ export function AdminScheduleEntriesPage(): JSX.Element {
     try {
       await deleteAdminScheduleEntry(token, deleteTarget.id);
       setDeleteTarget(null);
-      setFlashMessage(`Usunieto wpis #${deleteTarget.id}.`);
+      setFlashMessage(`Usunięto wpis #${deleteTarget.id}.`);
       await loadEntries();
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac wpisu harmonogramu.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się usunąć wpisu harmonogramu.';
       setDeleteError(message);
     } finally {
       setDeleteBusy(false);
     }
   };
 
-  const totalLabel = useMemo(() => `Lacznie rekordow: ${state.total}`, [state.total]);
+  const totalLabel = useMemo(() => `Łącznie rekordów: ${state.total}`, [state.total]);
 
   return (
     <div className="space-y-4">
       <AdminPanel
-        title="Harmonogram zajec"
-        subtitle={`${totalLabel}. Zarzadzaj planem zajec i relacjami miedzy danymi.`}
+        title="Harmonogram zajęć"
+        subtitle={`${totalLabel}. Zarządzaj planem zajęć i relacjami między danymi.`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
             Dodaj wpis
@@ -368,7 +368,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 setPage(1);
                 setSearch(searchDraft.trim());
               }}
-              placeholder="tytul, prowadzacy, grupa, kod przedmiotu"
+              placeholder="tytuł, prowadzący, grupa, kod przedmiotu"
             />
           </label>
 
@@ -392,7 +392,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           </label>
 
           <label className="admin-field">
-            <span className="admin-label">Prowadzacy</span>
+            <span className="admin-label">Prowadzący</span>
             <select
               className="admin-input"
               value={lecturerId ?? ''}
@@ -430,7 +430,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
           </label>
 
           <label className="admin-field">
-            <span className="admin-label">Typ zajec</span>
+            <span className="admin-label">Typ zajęć</span>
             <select
               className="admin-input"
               value={classTypeId ?? ''}
@@ -505,10 +505,10 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             >
               <option value="eventDate">Data</option>
               <option value="startTime">Godzina startu</option>
-              <option value="endTime">Godzina konca</option>
+              <option value="endTime">Godzina końca</option>
               <option value="roomCode">Sala</option>
-              <option value="lecturerName">Prowadzacy</option>
-              <option value="classTypeName">Typ zajec</option>
+              <option value="lecturerName">Prowadzący</option>
+              <option value="classTypeName">Typ zajęć</option>
               <option value="subjectCode">Kod przedmiotu</option>
               <option value="createdAt">Utworzono</option>
             </select>
@@ -524,8 +524,8 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 setSortOrder(event.target.value as 'asc' | 'desc');
               }}
             >
-              <option value="asc">Rosnaco</option>
-              <option value="desc">Malejaco</option>
+              <option value="asc">Rosnąco</option>
+              <option value="desc">Malejąco</option>
             </select>
           </label>
         </div>
@@ -537,15 +537,15 @@ export function AdminScheduleEntriesPage(): JSX.Element {
         ) : null}
 
         {state.loading ? (
-          <LoadingBlock message="Ladowanie wpisow harmonogramu..." />
+          <LoadingBlock message="Ładowanie wpisów harmonogramu..." />
         ) : state.error ? (
           <ErrorBlock
-            title="Blad listy harmonogramu"
+            title="Błąd listy harmonogramu"
             message={state.error}
             onRetry={() => void loadEntries()}
           />
         ) : state.rows.length === 0 ? (
-          <EmptyBlock message="Brak rekordow dla wybranych filtrow." />
+          <EmptyBlock message="Brak rekordów dla wybranych filtrów." />
         ) : (
           <>
             <div className="admin-table-wrap">
@@ -555,8 +555,8 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                     <th>Data</th>
                     <th>Godz.</th>
                     <th>Sala</th>
-                    <th>Tytul</th>
-                    <th>Prowadzacy</th>
+                    <th>Tytuł</th>
+                    <th>Prowadzący</th>
                     <th>Typ</th>
                     <th>Grupa</th>
                     <th>Przedmiot</th>
@@ -583,7 +583,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                             className="admin-btn admin-btn-secondary"
                             onClick={() => void openDetails(entry)}
                           >
-                            Szczegoly
+                            Szczegóły
                           </button>
                           <button
                             type="button"
@@ -600,7 +600,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                               setDeleteTarget(entry);
                             }}
                           >
-                            Usun
+                            Usuń
                           </button>
                         </div>
                       </td>
@@ -646,7 +646,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 }
                 required
               >
-                <option value={0}>Wybierz sale</option>
+                <option value={0}>Wybierz salę</option>
                 {options.rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.roomCode} - {room.displayName}
@@ -656,7 +656,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
             </label>
 
             <label className="admin-field">
-              <span className="admin-label">Data zajec</span>
+              <span className="admin-label">Data zajęć</span>
               <input
                 className="admin-input"
                 type="date"
@@ -671,7 +671,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
 
           <div className="grid gap-3 md:grid-cols-2">
             <label className="admin-field">
-              <span className="admin-label">Prowadzacy</span>
+              <span className="admin-label">Prowadzący</span>
               <select
                 className="admin-input"
                 value={formState.lecturerId}
@@ -680,7 +680,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 }
                 required
               >
-                <option value={0}>Wybierz prowadzacego</option>
+                <option value={0}>Wybierz prowadzącego</option>
                 {options.lecturers.map((lecturer) => (
                   <option key={lecturer.id} value={lecturer.id}>
                     {lecturer.name}
@@ -699,7 +699,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 }
                 required
               >
-                <option value={0}>Wybierz grupe</option>
+                <option value={0}>Wybierz grupę</option>
                 {options.studentGroups.map((group) => (
                   <option key={group.id} value={group.id}>
                     {group.name}
@@ -711,7 +711,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
 
           <div className="grid gap-3 md:grid-cols-3">
             <label className="admin-field">
-              <span className="admin-label">Typ zajec</span>
+              <span className="admin-label">Typ zajęć</span>
               <select
                 className="admin-input"
                 value={formState.classTypeId}
@@ -720,7 +720,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 }
                 required
               >
-                <option value={0}>Wybierz typ zajec</option>
+                <option value={0}>Wybierz typ zajęć</option>
                 {options.classTypes.map((classType) => (
                   <option key={classType.id} value={classType.id}>
                     {classType.name}
@@ -808,17 +808,17 @@ export function AdminScheduleEntriesPage(): JSX.Element {
 
       <ConfirmModal
         open={detailsOpen}
-        title={detailsState.entry ? `Szczegoly wpisu #${detailsState.entry.id}` : 'Szczegoly wpisu'}
-        message="Pelne dane i relacje wpisu harmonogramu."
+        title={detailsState.entry ? `Szczegóły wpisu #${detailsState.entry.id}` : 'Szczegóły wpisu'}
+        message="Pełne dane i relacje wpisu harmonogramu."
         confirmLabel="Zamknij"
         hideCancel
         onCancel={() => setDetailsOpen(false)}
         onConfirm={() => setDetailsOpen(false)}
       >
         {detailsState.loading ? (
-          <LoadingBlock message="Ladowanie szczegolow wpisu..." />
+          <LoadingBlock message="Ładowanie szczegółów wpisu..." />
         ) : detailsState.error ? (
-          <ErrorBlock title="Blad szczegolow" message={detailsState.error} />
+          <ErrorBlock title="Błąd szczegółów" message={detailsState.error} />
         ) : detailsState.entry ? (
           <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
             <p className="m-0">
@@ -834,7 +834,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
               Typ: <strong>{detailsState.entry.classTypeName}</strong>
             </p>
             <p className="m-0">
-              Prowadzacy: <strong>{detailsState.entry.lecturerName}</strong>
+              Prowadzący: <strong>{detailsState.entry.lecturerName}</strong>
             </p>
             <p className="m-0">
               Grupa: <strong>{detailsState.entry.studentGroupName}</strong>
@@ -846,7 +846,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
               Kierunek: <strong>{detailsState.entry.fieldOfStudyName}</strong>
             </p>
             <p className="m-0 md:col-span-2">
-              Tytul: <strong>{detailsState.entry.title}</strong>
+              Tytuł: <strong>{detailsState.entry.title}</strong>
             </p>
             <p className="m-0 md:col-span-2">
               Opis: <strong>{detailsState.entry.description}</strong>
@@ -865,9 +865,9 @@ export function AdminScheduleEntriesPage(): JSX.Element {
 
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title={deleteTarget ? `Usun wpis #${deleteTarget.id}` : 'Usun wpis'}
+        title={deleteTarget ? `Usuń wpis #${deleteTarget.id}` : 'Usuń wpis'}
         message="Operacja jest destrukcyjna i usuwa rekord harmonogramu z bazy danych."
-        confirmLabel="Usun wpis"
+        confirmLabel="Usuń wpis"
         onCancel={() => {
           if (!deleteBusy) {
             setDeleteTarget(null);

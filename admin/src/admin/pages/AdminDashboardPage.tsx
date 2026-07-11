@@ -48,7 +48,7 @@ export function AdminDashboardPage(): JSX.Element {
         }
 
         const message =
-          error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac danych dashboardu.';
+          error instanceof AdminApiError ? error.message : 'Nie udało się pobrać danych dashboardu.';
 
         setState({
           loading: false,
@@ -66,13 +66,13 @@ export function AdminDashboardPage(): JSX.Element {
   }, [token, reloadNonce]);
 
   if (state.loading) {
-    return <LoadingBlock message="Ladowanie dashboardu admina..." />;
+    return <LoadingBlock message="Ładowanie dashboardu admina..." />;
   }
 
   if (state.error || !state.data) {
     return (
       <ErrorBlock
-        title="Blad dashboardu"
+        title="Błąd dashboardu"
         message={state.error ?? 'Brak danych dashboardu.'}
         onRetry={() => setReloadNonce((prev) => prev + 1)}
       />
@@ -87,45 +87,45 @@ export function AdminDashboardPage(): JSX.Element {
         <DashboardStatCard label="Sale" value={stats.rooms} tone="info" />
         <DashboardStatCard label="Wpisy harmonogramu" value={stats.scheduleEntries} tone="ok" />
         <DashboardStatCard label="Dzisiaj" value={stats.todayEntries} tone="info" />
-        <DashboardStatCard label="Sale bez wpisow" value={stats.roomsWithoutEntries} tone="warn" />
+        <DashboardStatCard label="Sale bez wpisów" value={stats.roomsWithoutEntries} tone="warn" />
         <DashboardStatCard label="Konflikty czasowe" value={stats.overlappingEntries} tone="critical" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.3fr_minmax(0,1fr)]">
         <AdminPanel
           title="Szybkie akcje"
-          subtitle="Najczesciej uzywane obszary administracyjne"
+          subtitle="Najczęściej używane obszary administracyjne"
           actions={<span className="text-xs text-[#8ca0c4]">Live DB</span>}
         >
           <div className="grid gap-3 py-2 sm:grid-cols-2 xl:grid-cols-4">
             <QuickLinkCard
               title="Sale"
-              text="Dodawaj i edytuj sale wraz z lokalizacja: budynek, skrzydlo i pietro."
+              text="Dodawaj i edytuj sale wraz z lokalizacją: budynek i piętro."
               to="/rooms"
             />
             <QuickLinkCard
               title="Harmonogram"
-              text="Prowadz wpisy zajec, terminy oraz komplet relacji do sal i prowadzacych."
+              text="Prowadź wpisy zajęć, terminy oraz komplet relacji do sal i prowadzących."
               to="/schedule-entries"
             />
             <QuickLinkCard
               title="Kadra i oferta"
-              text="Wykladowcy, grupy, typy zajec, kierunki i przedmioty w jednym miejscu."
+              text="Wykładowcy, grupy, typy zajęć, kierunki i przedmioty w jednym miejscu."
               to="/teaching/lecturers"
             />
             <QuickLinkCard
               title="Lokalizacje"
-              text="Budynki, skrzydla i pietra wykorzystywane przez sale i harmonogram."
+              text="Budynki i piętra wykorzystywane przez sale i harmonogram."
               to="/locations/buildings"
             />
           </div>
         </AdminPanel>
 
-        <AdminPanel title="Ostrzezenia danych" subtitle="Sygnaly integralnosci bazy">
+        <AdminPanel title="Ostrzeżenia danych" subtitle="Sygnały integralności bazy">
           <div className="space-y-2 py-1">
             {warnings.length === 0 ? (
               <p className="m-0 rounded-xl border border-[#264435] bg-[#0f251c] px-3 py-2 text-sm text-[#a5e8c4]">
-                Brak krytycznych problemow.
+                Brak krytycznych problemów.
               </p>
             ) : (
               warnings.map((warning) => (
@@ -147,7 +147,7 @@ export function AdminDashboardPage(): JSX.Element {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <AdminPanel title="Ostatnie modyfikacje sal" subtitle="Najswiezsze rekordy rooms">
+        <AdminPanel title="Ostatnie modyfikacje sal" subtitle="Najświeższe rekordy rooms">
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
@@ -177,7 +177,7 @@ export function AdminDashboardPage(): JSX.Element {
                 <tr>
                   <th>Data</th>
                   <th>Sala</th>
-                  <th>Tytul</th>
+                  <th>Tytuł</th>
                   <th>Utworzono</th>
                 </tr>
               </thead>

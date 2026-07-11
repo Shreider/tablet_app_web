@@ -289,7 +289,7 @@ const resolveEntryTitle = async (subjectId: number): Promise<string> => {
     }
   });
 
-  return subject?.name ?? 'Zajecia';
+  return subject?.name ?? 'Zajęcia';
 };
 
 export const createAdminScheduleEntry = async ({

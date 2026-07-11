@@ -42,7 +42,7 @@ export function HomeRedirectPage(): JSX.Element {
         const message =
           error instanceof ApiError
             ? error.message
-            : 'Nie udalo sie pobrac listy sal z backendu.';
+            : 'Nie udało się pobrać listy sal z backendu.';
 
         setHomeState({
           isLoading: false,
@@ -63,7 +63,7 @@ export function HomeRedirectPage(): JSX.Element {
     return <Navigate to={`/room/${encodeURIComponent(homeState.firstRoomId)}`} replace />;
   }
 
-  const title = homeState.isLoading ? 'Ladowanie danych' : 'Nie mozna otworzyc widoku sali';
+  const title = homeState.isLoading ? 'Ładowanie danych' : 'Nie można otworzyć widoku sali';
   const message = homeState.isLoading
     ? 'Pobieranie listy sal z bazy danych...'
     : homeState.errorMessage ?? 'Brak danych sal.';

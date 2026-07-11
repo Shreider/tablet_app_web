@@ -121,7 +121,7 @@ export function AdminRoomsPage(): JSX.Element {
         rows: payload.rows
       });
     } catch (error) {
-      const message = error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac listy sal.';
+      const message = error instanceof AdminApiError ? error.message : 'Nie udało się pobrać listy sal.';
 
       setState((prev) => ({
         ...prev,
@@ -190,9 +190,9 @@ export function AdminRoomsPage(): JSX.Element {
 
   const validateRoomForm = (payload: RoomFormPayload): string | null => {
     if (!payload.roomCode.trim()) return 'Podaj kod sali.';
-    if (!payload.displayName.trim()) return 'Podaj nazwe wyswietlana sali.';
+    if (!payload.displayName.trim()) return 'Podaj nazwę wyświetlaną sali.';
     if (!payload.buildingId) return 'Wybierz budynek z listy.';
-    if (!payload.floorId) return 'Wybierz pietro z listy.';
+    if (!payload.floorId) return 'Wybierz piętro z listy.';
     return null;
   };
 
@@ -215,17 +215,17 @@ export function AdminRoomsPage(): JSX.Element {
     try {
       if (formMode === 'create') {
         await createAdminRoom(token, formState);
-        setFlashMessage('Sala zostala dodana.');
+        setFlashMessage('Sala została dodana.');
       } else if (editingRoom) {
         await updateAdminRoom(token, editingRoom.id, formState);
-        setFlashMessage(`Sala ${editingRoom.roomCode} zostala zaktualizowana.`);
+        setFlashMessage(`Sala ${editingRoom.roomCode} została zaktualizowana.`);
       }
 
       setFormOpen(false);
       await Promise.all([loadRooms(), loadOptions()]);
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac zmian sali.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się zapisać zmian sali.';
       setFormError(message);
     } finally {
       setFormBusy(false);
@@ -256,7 +256,7 @@ export function AdminRoomsPage(): JSX.Element {
       });
     } catch (error) {
       const message =
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac szczegolow sali.';
+        error instanceof AdminApiError ? error.message : 'Nie udało się pobrać szczegółów sali.';
       setDetailsState({
         loading: false,
         error: message,
@@ -285,34 +285,34 @@ export function AdminRoomsPage(): JSX.Element {
       setDeleteTarget(null);
       setFlashMessage(
         response.relatedEntriesDeleted > 0
-          ? `Usunieto sale i ${response.relatedEntriesDeleted} powiazanych wpisow.`
-          : `Usunieto sale ${deleteTarget.roomCode}.`
+          ? `Usunięto salę i ${response.relatedEntriesDeleted} powiązanych wpisów.`
+          : `Usunięto salę ${deleteTarget.roomCode}.`
       );
       await Promise.all([loadRooms(), loadOptions()]);
     } catch (error) {
       if (error instanceof AdminApiError && error.status === 409) {
         setDeleteError(
-          'Sala ma powiazane wpisy. Zaznacz usuniecie kaskadowe, aby usunac sale razem z harmonogramem.'
+          'Sala ma powiązane wpisy. Zaznacz usunięcie kaskadowe, aby usunąć salę razem z harmonogramem.'
         );
         setDeleteCascade(true);
       } else {
-        setDeleteError(error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac sali.');
+        setDeleteError(error instanceof AdminApiError ? error.message : 'Nie udało się usunąć sali.');
       }
     } finally {
       setDeleteBusy(false);
     }
   };
 
-  const totalLabel = useMemo(() => `Lacznie rekordow: ${state.total}`, [state.total]);
+  const totalLabel = useMemo(() => `Łącznie rekordów: ${state.total}`, [state.total]);
 
   return (
     <div className="space-y-4">
       <AdminPanel
         title="Sale"
-        subtitle={`${totalLabel}. Zarzadzaj lista sal i ich lokalizacja.`}
+        subtitle={`${totalLabel}. Zarządzaj listą sal i ich lokalizacją.`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
-            Dodaj sale
+            Dodaj salę
           </button>
         }
       >
@@ -360,7 +360,7 @@ export function AdminRoomsPage(): JSX.Element {
           </label>
 
           <label className="admin-field">
-            <span className="admin-label">Pietro</span>
+            <span className="admin-label">Piętro</span>
             <select
               className="admin-input"
               value={floorId ?? ''}
@@ -391,7 +391,7 @@ export function AdminRoomsPage(): JSX.Element {
               <option value="roomCode">Kod sali</option>
               <option value="displayName">Nazwa</option>
               <option value="buildingName">Budynek</option>
-              <option value="entriesCount">Liczba wpisow</option>
+              <option value="entriesCount">Liczba wpisów</option>
               <option value="updatedAt">Data modyfikacji</option>
             </select>
           </label>
@@ -406,8 +406,8 @@ export function AdminRoomsPage(): JSX.Element {
                 setSortOrder(event.target.value as 'asc' | 'desc');
               }}
             >
-              <option value="asc">Rosnaco</option>
-              <option value="desc">Malejaco</option>
+              <option value="asc">Rosnąco</option>
+              <option value="desc">Malejąco</option>
             </select>
           </label>
         </div>
@@ -419,11 +419,11 @@ export function AdminRoomsPage(): JSX.Element {
         ) : null}
 
         {state.loading ? (
-          <LoadingBlock message="Ladowanie listy sal..." />
+          <LoadingBlock message="Ładowanie listy sal..." />
         ) : state.error ? (
-          <ErrorBlock title="Blad listy sal" message={state.error} onRetry={() => void loadRooms()} />
+          <ErrorBlock title="Błąd listy sal" message={state.error} onRetry={() => void loadRooms()} />
         ) : state.rows.length === 0 ? (
-          <EmptyBlock message="Brak rekordow dla wybranych filtrow." />
+          <EmptyBlock message="Brak rekordów dla wybranych filtrów." />
         ) : (
           <>
             <div className="admin-table-wrap">
@@ -433,7 +433,7 @@ export function AdminRoomsPage(): JSX.Element {
                     <th>Kod</th>
                     <th>Nazwa</th>
                     <th>Budynek</th>
-                    <th>Pietro</th>
+                    <th>Piętro</th>
                     <th>Wpisy</th>
                     <th>Aktualizacja</th>
                     <th>Akcje</th>
@@ -455,7 +455,7 @@ export function AdminRoomsPage(): JSX.Element {
                             className="admin-btn admin-btn-secondary"
                             onClick={() => void openDetails(room)}
                           >
-                            Szczegoly
+                            Szczegóły
                           </button>
                           <button
                             type="button"
@@ -469,7 +469,7 @@ export function AdminRoomsPage(): JSX.Element {
                             className="admin-btn admin-btn-danger"
                             onClick={() => onRequestDeleteRoom(room)}
                           >
-                            Usun
+                            Usuń
                           </button>
                         </div>
                       </td>
@@ -485,9 +485,9 @@ export function AdminRoomsPage(): JSX.Element {
 
       <ConfirmModal
         open={formOpen}
-        title={formMode === 'create' ? 'Dodaj nowa sale' : `Edytuj sale ${editingRoom?.roomCode ?? ''}`}
-        message="Wprowadz dane sali. Powiazania lokalizacji wybieraj z predefiniowanych list."
-        confirmLabel={formMode === 'create' ? 'Dodaj sale' : 'Zapisz zmiany'}
+        title={formMode === 'create' ? 'Dodaj nową salę' : `Edytuj salę ${editingRoom?.roomCode ?? ''}`}
+        message="Wprowadź dane sali. Powiązania lokalizacji wybieraj z predefiniowanych list."
+        confirmLabel={formMode === 'create' ? 'Dodaj salę' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
             setFormOpen(false);
@@ -511,7 +511,7 @@ export function AdminRoomsPage(): JSX.Element {
             />
           </label>
           <label className="admin-field">
-            <span className="admin-label">Nazwa wyswietlana</span>
+            <span className="admin-label">Nazwa wyświetlana</span>
             <input
               className="admin-input"
               value={formState.displayName}
@@ -546,7 +546,7 @@ export function AdminRoomsPage(): JSX.Element {
               </select>
             </label>
             <label className="admin-field">
-              <span className="admin-label">Pietro</span>
+              <span className="admin-label">Piętro</span>
               <select
                 className="admin-input"
                 value={formState.floorId}
@@ -555,7 +555,7 @@ export function AdminRoomsPage(): JSX.Element {
                 }
                 required
               >
-                <option value={0}>Wybierz pietro</option>
+                <option value={0}>Wybierz piętro</option>
                 {options.floors.map((floor) => (
                   <option key={floor.id} value={floor.id}>
                     {floor.label}
@@ -575,17 +575,17 @@ export function AdminRoomsPage(): JSX.Element {
 
       <ConfirmModal
         open={detailsOpen}
-        title={detailsState.room ? `Szczegoly sali ${detailsState.room.roomCode}` : 'Szczegoly sali'}
-        message="Powiazane wpisy harmonogramu dla wybranej sali."
+        title={detailsState.room ? `Szczegóły sali ${detailsState.room.roomCode}` : 'Szczegóły sali'}
+        message="Powiązane wpisy harmonogramu dla wybranej sali."
         confirmLabel="Zamknij"
         hideCancel
         onCancel={() => setDetailsOpen(false)}
         onConfirm={() => setDetailsOpen(false)}
       >
         {detailsState.loading ? (
-          <LoadingBlock message="Ladowanie szczegolow sali..." />
+          <LoadingBlock message="Ładowanie szczegółów sali..." />
         ) : detailsState.error ? (
-          <ErrorBlock title="Blad szczegolow" message={detailsState.error} />
+          <ErrorBlock title="Błąd szczegółów" message={detailsState.error} />
         ) : detailsState.room ? (
           <div className="space-y-3">
             <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
@@ -596,7 +596,7 @@ export function AdminRoomsPage(): JSX.Element {
                 Budynek: <strong>{detailsState.room.buildingName}</strong>
               </p>
               <p className="m-0">
-                Pietro: <strong>{detailsState.room.floorLabel}</strong>
+                Piętro: <strong>{detailsState.room.floorLabel}</strong>
               </p>
               <p className="m-0">
                 Utworzono: <strong>{formatDate(detailsState.room.createdAt)}</strong>
@@ -607,7 +607,7 @@ export function AdminRoomsPage(): JSX.Element {
             </div>
 
             {detailsState.entries.length === 0 ? (
-              <EmptyBlock message="Brak wpisow harmonogramu dla tej sali." />
+              <EmptyBlock message="Brak wpisów harmonogramu dla tej sali." />
             ) : (
               <div className="max-h-[260px] overflow-y-auto rounded-xl border border-[#293e5e]">
                 <table className="admin-table">
@@ -615,7 +615,7 @@ export function AdminRoomsPage(): JSX.Element {
                     <tr>
                       <th>Data</th>
                       <th>Godz.</th>
-                      <th>Tytul</th>
+                      <th>Tytuł</th>
                       <th>Typ</th>
                     </tr>
                   </thead>
@@ -640,9 +640,9 @@ export function AdminRoomsPage(): JSX.Element {
 
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title={deleteTarget ? `Usun sale ${deleteTarget.roomCode}` : 'Usun sale'}
-        message="Operacja usuwa rekord sali. Przy usunieciu kaskadowym usuniete zostana tez wpisy harmonogramu tej sali."
-        confirmLabel="Usun rekord"
+        title={deleteTarget ? `Usuń salę ${deleteTarget.roomCode}` : 'Usuń salę'}
+        message="Operacja usuwa rekord sali. Przy usunięciu kaskadowym usunięte zostaną też wpisy harmonogramu tej sali."
+        confirmLabel="Usuń rekord"
         onCancel={() => {
           if (!deleteBusy) {
             setDeleteTarget(null);
@@ -658,7 +658,7 @@ export function AdminRoomsPage(): JSX.Element {
             checked={deleteCascade}
             onChange={(event) => setDeleteCascade(event.target.checked)}
           />
-          Wymus usuniecie kaskadowe powiazanych wpisow.
+          Wymuś usunięcie kaskadowe powiązanych wpisów.
         </label>
         {deleteError ? (
           <p className="mt-2 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">

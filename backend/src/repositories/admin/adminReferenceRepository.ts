@@ -453,31 +453,31 @@ export const listReferenceDependencies = async (
     case 'buildings': {
       const roomsCount = await prismaAdmin.room.count({ where: { buildingId: recordId } });
 
-      return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiazane sale' }] : [];
+      return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiązane sale' }] : [];
     }
     case 'floors': {
       const roomsCount = await prismaAdmin.room.count({ where: { floorId: recordId } });
-      return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiazane sale' }] : [];
+      return roomsCount > 0 ? [{ key: 'rooms', count: roomsCount, message: 'Powiązane sale' }] : [];
     }
     case 'lecturers': {
       const count = await prismaAdmin.scheduleEntry.count({ where: { lecturerId: recordId } });
-      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiazane wpisy harmonogramu' }] : [];
+      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiązane wpisy harmonogramu' }] : [];
     }
     case 'student-groups': {
       const count = await prismaAdmin.scheduleEntry.count({ where: { studentGroupId: recordId } });
-      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiazane wpisy harmonogramu' }] : [];
+      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiązane wpisy harmonogramu' }] : [];
     }
     case 'class-types': {
       const count = await prismaAdmin.scheduleEntry.count({ where: { classTypeId: recordId } });
-      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiazane wpisy harmonogramu' }] : [];
+      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiązane wpisy harmonogramu' }] : [];
     }
     case 'fields-of-study': {
       const count = await prismaAdmin.subject.count({ where: { fieldOfStudyId: recordId } });
-      return count > 0 ? [{ key: 'subjects', count, message: 'Powiazane przedmioty' }] : [];
+      return count > 0 ? [{ key: 'subjects', count, message: 'Powiązane przedmioty' }] : [];
     }
     case 'subjects': {
       const count = await prismaAdmin.scheduleEntry.count({ where: { subjectId: recordId } });
-      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiazane wpisy harmonogramu' }] : [];
+      return count > 0 ? [{ key: 'scheduleEntries', count, message: 'Powiązane wpisy harmonogramu' }] : [];
     }
     default:
       return [];

@@ -138,7 +138,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         data: payload
       });
     } catch (error) {
-      const message = error instanceof AdminApiError ? error.message : 'Nie udalo sie pobrac danych sekcji.';
+      const message = error instanceof AdminApiError ? error.message : 'Nie udało się pobrać danych sekcji.';
       setState({
         loading: false,
         error: message,
@@ -275,15 +275,15 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     }
 
     if (entityKey === 'lecturers' && !data.fullName.trim()) {
-      return 'Pole imie i nazwisko jest wymagane.';
+      return 'Pole imię i nazwisko jest wymagane.';
     }
 
     if (entityKey === 'floors') {
       if (!data.label.trim()) {
-        return 'Pole etykieta pietra jest wymagane.';
+        return 'Pole etykieta piętra jest wymagane.';
       }
       if (!Number.isInteger(Number(data.sortOrder))) {
-        return 'Kolejnosc wyswietlania musi byc liczba calkowita.';
+        return 'Kolejność wyświetlania musi być liczbą całkowitą.';
       }
     }
 
@@ -317,7 +317,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     try {
       if (formMode === 'create') {
         await createAdminReference(token, selectedEntity, payload);
-        setFlashMessage(`Dodano nowa pozycje: ${currentMeta.label}.`);
+        setFlashMessage(`Dodano nową pozycję: ${currentMeta.label}.`);
       } else if (editingId) {
         await updateAdminReference(token, selectedEntity, editingId, payload);
         setFlashMessage(`Zapisano zmiany w sekcji: ${currentMeta.label}.`);
@@ -327,7 +327,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
       await loadDataset();
     } catch (error) {
       setFormError(
-        error instanceof AdminApiError ? error.message : 'Nie udalo sie zapisac danych.'
+        error instanceof AdminApiError ? error.message : 'Nie udało się zapisać danych.'
       );
     } finally {
       setFormBusy(false);
@@ -372,7 +372,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
       const message =
         error instanceof AdminApiError
           ? error.message
-          : 'Nie udalo sie sprawdzic zaleznosci rekordu.';
+          : 'Nie udało się sprawdzić zależności rekordu.';
       setDeleteError(message);
       setDeleteState((prev) => (prev ? { ...prev, checkingDependencies: false } : prev));
     }
@@ -393,10 +393,10 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     try {
       await deleteAdminReference(token, deleteState.entity, deleteState.id);
       setDeleteState(null);
-      setFlashMessage(`Usunieto pozycje z sekcji: ${currentMeta.label}.`);
+      setFlashMessage(`Usunięto pozycję z sekcji: ${currentMeta.label}.`);
       await loadDataset();
     } catch (error) {
-      const apiMessage = error instanceof AdminApiError ? error.message : 'Nie udalo sie usunac rekordu.';
+      const apiMessage = error instanceof AdminApiError ? error.message : 'Nie udało się usunąć rekordu.';
       setDeleteError(apiMessage);
     } finally {
       setDeleteBusy(false);
@@ -404,13 +404,13 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
   };
 
   if (state.loading) {
-    return <LoadingBlock message="Ladowanie danych sekcji..." />;
+    return <LoadingBlock message="Ładowanie danych sekcji..." />;
   }
 
   if (state.error || !state.data) {
     return (
       <ErrorBlock
-        title="Blad danych sekcji"
+        title="Błąd danych sekcji"
         message={state.error ?? 'Brak danych.'}
         onRetry={() => void loadDataset()}
       />
@@ -454,15 +454,15 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         ) : null}
 
         {selectedRows.length === 0 ? (
-          <EmptyBlock message="Brak rekordow w tej sekcji." />
+          <EmptyBlock message="Brak rekordów w tej sekcji." />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Wartosc</th>
-                  <th>Powiazanie</th>
+                  <th>Wartość</th>
+                  <th>Powiązanie</th>
                   <th>Status</th>
                   <th>Aktualizacja</th>
                   <th>Akcje</th>
@@ -484,7 +484,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                     selectedEntity === 'subjects'
                       ? String(typedRow.fieldOfStudyName)
                       : selectedEntity === 'floors'
-                        ? `Kolejnosc: ${String(typedRow.sortOrder)}`
+                        ? `Kolejność: ${String(typedRow.sortOrder)}`
                         : '-';
                   const updatedAt = String(typedRow.updatedAt ?? '');
                   const isActive = Boolean(typedRow.isActive);
@@ -514,7 +514,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                             className="admin-btn admin-btn-danger"
                             onClick={() => void requestDelete(typedRow)}
                           >
-                            Usun
+                            Usuń
                           </button>
                         </div>
                       </td>
@@ -530,7 +530,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
       <ConfirmModal
         open={formOpen}
         title={formMode === 'create' ? currentMeta.createLabel : `Edytuj rekord #${editingId ?? ''}`}
-        message="Wypelnij pola i zapisz zmiany. Powiazania wybieraj z list kontrolowanych."
+        message="Wypełnij pola i zapisz zmiany. Powiązania wybieraj z list kontrolowanych."
         confirmLabel={formMode === 'create' ? 'Dodaj' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
@@ -546,7 +546,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         <form id="catalog-form" onSubmit={submitForm} className="grid gap-3">
           {selectedEntity === 'lecturers' ? (
             <label className="admin-field">
-              <span className="admin-label">Imie i nazwisko</span>
+              <span className="admin-label">Imię i nazwisko</span>
               <input
                 className="admin-input"
                 value={formState.fullName}
@@ -559,7 +559,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
           ) : selectedEntity === 'floors' ? (
             <div className="grid gap-3 md:grid-cols-2">
               <label className="admin-field">
-                <span className="admin-label">Etykieta pietra</span>
+                <span className="admin-label">Etykieta piętra</span>
                 <input
                   className="admin-input"
                   value={formState.label}
@@ -568,7 +568,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                 />
               </label>
               <label className="admin-field">
-                <span className="admin-label">Kolejnosc wyswietlania</span>
+                <span className="admin-label">Kolejność wyświetlania</span>
                 <input
                   className="admin-input"
                   type="number"
@@ -652,9 +652,9 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
 
       <ConfirmModal
         open={Boolean(deleteState)}
-        title={deleteState ? `Usun pozycje: ${deleteState.label}` : 'Usun pozycje'}
-        message="Usuniecie jest blokowane, jesli pozycja jest wykorzystywana przez inne rekordy."
-        confirmLabel="Usun pozycje"
+        title={deleteState ? `Usuń pozycję: ${deleteState.label}` : 'Usuń pozycję'}
+        message="Usunięcie jest blokowane, jeśli pozycja jest wykorzystywana przez inne rekordy."
+        confirmLabel="Usuń pozycję"
         onCancel={() => {
           if (!deleteBusy) {
             setDeleteState(null);
@@ -666,11 +666,11 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         busy={deleteBusy || deleteState?.checkingDependencies}
       >
         {deleteState?.checkingDependencies ? (
-          <LoadingBlock message="Sprawdzanie zaleznosci..." />
+          <LoadingBlock message="Sprawdzanie zależności..." />
         ) : deleteState && deleteState.dependencies.length > 0 ? (
           <div className="space-y-2">
             <p className="m-0 rounded-xl border border-[#5f4b29] bg-[#2d2414] px-3 py-2 text-sm text-[#ffd69e]">
-              Ta pozycja jest uzywana i nie moze zostac usunieta.
+              Ta pozycja jest używana i nie może zostać usunięta.
             </p>
             {deleteState.dependencies.map((dependency) => (
               <p key={dependency.key} className="m-0 text-sm text-[#b9cbe8]">

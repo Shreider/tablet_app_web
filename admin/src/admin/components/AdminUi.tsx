@@ -44,7 +44,7 @@ export function ErrorBlock({
       <p className="m-0 text-sm">{message}</p>
       {onRetry ? (
         <button type="button" className="admin-btn admin-btn-secondary" onClick={onRetry}>
-          Sprobuj ponownie
+          Spróbuj ponownie
         </button>
       ) : null}
     </div>
@@ -88,7 +88,7 @@ export function PaginationControls({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
         >
-          Nastepna
+          Następna
         </button>
       </div>
     </div>

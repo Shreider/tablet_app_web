@@ -58,9 +58,9 @@ export function AdminLayout(): JSX.Element {
           </nav>
 
           <div className="mt-auto rounded-2xl border border-[#2d3f5b] bg-[#101a2a] p-4">
-            <p className="m-0 text-xs uppercase tracking-[0.12em] text-[#8ca0c4]">Bezpieczenstwo</p>
+            <p className="m-0 text-xs uppercase tracking-[0.12em] text-[#8ca0c4]">Bezpieczeństwo</p>
             <p className="mt-2 text-sm text-[#bfd0ec]">
-              Endpointy admina wymagaja tokenu i dzialaja na realnej bazie projektu.
+              Endpointy admina wymagają tokenu i działają na realnej bazie projektu.
             </p>
             <button
               type="button"
@@ -96,13 +96,13 @@ export function AdminLayout(): JSX.Element {
                 target="_blank"
                 rel="noreferrer"
               >
-                Podglad sali
+                Podgląd sali
               </a>
               <button
                 type="button"
                 className="admin-icon-btn lg:hidden"
                 onClick={() => setMobileNavOpen(true)}
-                aria-label="Otworz menu"
+                aria-label="Otwórz menu"
               >
                 ☰
               </button>
