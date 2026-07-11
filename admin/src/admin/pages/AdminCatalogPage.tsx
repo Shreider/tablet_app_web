@@ -455,7 +455,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                 <tr>
                   <th>ID</th>
                   <th>Wartość</th>
-                  <th>Powiązanie</th>
+                  {selectedEntity === 'subjects' && <th>Powiązanie</th>}
                   <th>Status</th>
                   <th>Aktualizacja</th>
                   <th>Akcje</th>
@@ -473,12 +473,6 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                         : selectedEntity === 'subjects'
                           ? `${String(typedRow.code)} - ${String(typedRow.name)}`
                           : String(typedRow.name);
-                  const relation =
-                    selectedEntity === 'subjects'
-                      ? String(typedRow.fieldOfStudyName)
-                      : selectedEntity === 'floors'
-                        ? `Kolejność: ${String(typedRow.sortOrder)}`
-                        : '-';
                   const updatedAt = String(typedRow.updatedAt ?? '');
                   const isActive = Boolean(typedRow.isActive);
 
@@ -486,7 +480,9 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                     <tr key={rowId}>
                       <td>{rowId}</td>
                       <td>{primary}</td>
-                      <td>{relation}</td>
+                      {selectedEntity === 'subjects' && (
+                        <td>{String(typedRow.fieldOfStudyName)}</td>
+                      )}
                       <td>
                         <StatusBadge tone={isActive ? 'ok' : 'warn'}>
                           {isActive ? 'Aktywny' : 'Nieaktywny'}
