@@ -29,7 +29,7 @@ Możesz też pobrać [APK i sumę kontrolną](https://github.com/Shreider/tablet
 Otwórz PowerShell, podłącz jedno urządzenie przez USB, włącz debugowanie USB i zatwierdź zgodę dla komputera. Wklej:
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/Shreider/tablet_app_web/android/install.ps1').Content))
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/Shreider/tablet_app_web/android/install.ps1').Content.TrimStart([char]0xfeff)))
 ```
 
 Skrypt `install.ps1` jest przygotowany dla Windows PowerShell 5.1 i PowerShell 7. Wykonuje te same kroki co instalator Linuksa: pobiera APK, sprawdza SHA-256, aktualizuje aplikację z zachowaniem danych i proponuje nadanie roli właściciela, gdy jej brakuje. Zgodę potwierdzasz odpowiedzią `t`; istniejąca rola Stanowiska pozostaje bez zmian.
