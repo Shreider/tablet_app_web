@@ -24,6 +24,22 @@ Odpowiedź `n` pomija nadanie roli. Bez interaktywnego terminala instalator nie 
 
 Możesz też pobrać [APK i sumę kontrolną](https://github.com/Shreider/tablet_app_web/releases/tag/android-v1.0.9) i zainstalować aplikację ręcznie.
 
+## Instalacja w Windows
+
+Otwórz PowerShell, podłącz jedno urządzenie przez USB, włącz debugowanie USB i zatwierdź zgodę dla komputera. Wklej:
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/Shreider/tablet_app_web/android/install.ps1').Content))
+```
+
+Skrypt `install.ps1` jest przygotowany dla Windows PowerShell 5.1 i PowerShell 7. Wykonuje te same kroki co instalator Linuksa: pobiera APK, sprawdza SHA-256, aktualizuje aplikację z zachowaniem danych i proponuje nadanie roli właściciela, gdy jej brakuje. Zgodę potwierdzasz odpowiedzią `t`; istniejąca rola Stanowiska pozostaje bez zmian.
+
+ADB szuka w `PATH`, w SDK wskazanym przez `ANDROID_HOME` lub `ANDROID_SDK_ROOT`, w `%LOCALAPPDATA%\Android\Sdk` i we własnym katalogu narzędzi. Jeśli go brakuje, po akceptacji licencji pobiera oficjalne Platform-Tools 36.0.2 dla Windows i sprawdza sumę archiwum. Narzędzia zapisuje w `%LOCALAPPDATA%\Stanowisko`; nie wymaga instalowania Android Studio ani uprawnień administratora Windows. Sterownik USB urządzenia może wymagać osobnej instalacji — [konfiguracja urządzenia w Windows](https://developer.android.com/studio/run/oem-usb).
+
+Możesz też pobrać `install.ps1` z repozytorium lub wydania i uruchomić lokalnie zgodnie z ustawieniami wykonywania skryptów na swoim komputerze. Komenda powyżej nie zmienia systemowych zasad wykonywania skryptów. Instalator dla Windows podlega tym samym warunkom nadania roli właściciela co wersja dla Linuksa; nie resetuje urządzenia ani nie usuwa kont, profili lub danych.
+
+Logika instalatora przeszła 46 testów w PowerShell 7 na Linuksie z kontrolowanymi odpowiedziami ADB. Sprawdzono także oficjalne archiwum narzędzi dla Windows i jego sumę. Uruchomienie na komputerze z Windows, rzeczywisty sterownik USB i nadanie roli od zera tym wariantem pozostają do potwierdzenia.
+
 ## Budowanie
 
 Otwórz katalog projektu w Android Studio. Wskaż lokalny SDK w `local.properties` i wybierz JDK 25 dla Gradle. Projekt używa Gradle 9.1.0, Android Gradle Plugin 9.0.1 oraz SDK 36; minimalny API aplikacji to 34.
