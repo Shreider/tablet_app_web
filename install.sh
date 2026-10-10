@@ -80,7 +80,7 @@ else
     adb_bin="$cache_dir/platform-tools-36.0.2/platform-tools/adb"
 fi
 
-devices=$("$adb_bin" devices) || fail "Nie można uruchomić ADB."
+devices=$("$adb_bin" devices </dev/null) || fail "Nie można uruchomić ADB."
 serial=""
 device_state=""
 device_count=0
@@ -96,7 +96,7 @@ done <<< "$devices"
 [[ "$device_state" == "device" ]] || fail "ADB nie ma dostępu do urządzenia. Odblokuj ekran, włącz debugowanie USB i zatwierdź zgodę dla komputera."
 
 property() {
-    "$adb_bin" -s "$serial" shell getprop "$1" | tr -d '\r'
+    "$adb_bin" -s "$serial" shell -n getprop "$1" | tr -d '\r'
 }
 
 api=$(property ro.build.version.sdk) || fail "Nie można odczytać wersji Androida."
@@ -115,14 +115,14 @@ download "$APK_URL" "$work_dir/$APK_NAME" || fail "Nie można pobrać APK. Spraw
 verify_file "$work_dir/$APK_NAME" "$APK_SHA256"
 
 # Pobieranie może potrwać; przed instalacją sprawdzamy to samo połączenie ponownie.
-[[ "$("$adb_bin" -s "$serial" get-state)" == "device" ]] || fail "Połączenie z urządzeniem zostało przerwane."
+[[ "$("$adb_bin" -s "$serial" get-state </dev/null)" == "device" ]] || fail "Połączenie z urządzeniem zostało przerwane."
 [[ "$(property ro.product.model)" == "$model" && "$(property ro.product.manufacturer)" == "$manufacturer" ]] || fail "Tożsamość urządzenia uległa zmianie."
 if [[ "$serial" == emulator-* ]]; then
     [[ "$(property ro.kernel.qemu)" == "1" ]] || fail "Nie potwierdzono emulatora przed instalacją."
 fi
 
 printf 'Instalowanie aktualizacji z zachowaniem danych aplikacji…\n'
-if ! result=$("$adb_bin" -s "$serial" install -r -t "$work_dir/$APK_NAME" 2>&1); then
+if ! result=$("$adb_bin" -s "$serial" install -r -t "$work_dir/$APK_NAME" </dev/null 2>&1); then
     printf '%s\n' "$result" >&2
     fail "Instalacja nie powiodła się. Poprzednia aplikacja nie została odinstalowana."
 fi
