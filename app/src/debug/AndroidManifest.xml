@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Wersja rozwojowa pozwala usunąć testowego właściciela urządzenia przez ADB. -->
+    <application android:testOnly="true" />
+</manifest>
