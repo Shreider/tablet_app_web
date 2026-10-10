@@ -7,6 +7,8 @@ readonly APK_URL="https://github.com/Shreider/tablet_app_web/releases/download/a
 readonly APK_SHA256="6f15773cc81c6def385109e35ef217b3a04ed62487641d52a285ae23a4837cd2"
 readonly TOOLS_URL="https://dl.google.com/android/repository/platform-tools_r36.0.2-linux.zip"
 readonly TOOLS_SHA256="3afdea91441815ab41254193df0343d92c1b1c0d0237165c3a345c8af8891c31"
+readonly ADMIN_COMPONENT="pl.adriantur.stanowisko/.WorkspaceAdminReceiver"
+readonly ADMIN_COMPONENT_FULL="pl.adriantur.stanowisko/pl.adriantur.stanowisko.WorkspaceAdminReceiver"
 
 fail() {
     printf 'Błąd: %s\n' "$*" >&2
@@ -24,6 +26,44 @@ verify_file() {
     local actual
     actual=$(sha256sum "$1")
     [[ "${actual%% *}" == "$2" ]] || fail "Suma kontrolna pobranego pliku jest niezgodna."
+}
+
+owner_status() {
+    local owners line component
+    owners=$("$adb_bin" -s "$serial" shell -n dpm list-owners | tr -d '\r') || fail "Nie można odczytać właściciela urządzenia."
+    if [[ "$owners" == "no owners" ]]; then
+        printf 'none\n'
+        return
+    fi
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]*User[[:space:]]+0:[[:space:]]+admin=([^,[:space:]]+),DeviceOwner(,|$) ]]; then
+            component="${BASH_REMATCH[1]}"
+            if [[ "$component" == "$ADMIN_COMPONENT" || "$component" == "$ADMIN_COMPONENT_FULL" ]]; then
+                printf 'stanowisko\n'
+            else
+                printf 'other\n'
+            fi
+            return
+        fi
+    done <<< "$owners"
+    if [[ "$owners" == *admin=* ]]; then
+        printf 'other\n'
+    else
+        fail "Nie rozpoznano odpowiedzi Androida dotyczącej właściciela urządzenia."
+    fi
+}
+
+check_connection() {
+    [[ "$("$adb_bin" -s "$serial" get-state </dev/null)" == "device" ]] || fail "Połączenie z urządzeniem zostało przerwane."
+    [[ "$(property ro.product.model)" == "$model" && "$(property ro.product.manufacturer)" == "$manufacturer" ]] || fail "Tożsamość urządzenia uległa zmianie."
+    if [[ "$serial" == emulator-* ]]; then
+        [[ "$(property ro.kernel.qemu)" == "1" ]] || fail "Nie potwierdzono emulatora przed zmianą konfiguracji."
+    fi
+}
+
+check_owner() {
+    owner=$(owner_status) || exit 1
+    [[ "$owner" != "other" ]] || fail "Urządzenie jest już zarządzane przez innego administratora. Nie można nadać roli Stanowisku."
 }
 
 unpack_tools() {
@@ -108,6 +148,7 @@ manufacturer=$(property ro.product.manufacturer) || fail "Nie można odczytać p
 if [[ "$serial" == emulator-* ]]; then
     [[ "$(property ro.kernel.qemu)" == "1" ]] || fail "Nie potwierdzono, że wybrane urządzenie jest emulatorem."
 fi
+check_owner
 
 printf 'Urządzenie: %s %s, API %s.\n' "$manufacturer" "$model" "$api"
 printf 'Pobieranie Stanowisko %s…\n' "$VERSION"
@@ -115,11 +156,8 @@ download "$APK_URL" "$work_dir/$APK_NAME" || fail "Nie można pobrać APK. Spraw
 verify_file "$work_dir/$APK_NAME" "$APK_SHA256"
 
 # Pobieranie może potrwać; przed instalacją sprawdzamy to samo połączenie ponownie.
-[[ "$("$adb_bin" -s "$serial" get-state </dev/null)" == "device" ]] || fail "Połączenie z urządzeniem zostało przerwane."
-[[ "$(property ro.product.model)" == "$model" && "$(property ro.product.manufacturer)" == "$manufacturer" ]] || fail "Tożsamość urządzenia uległa zmianie."
-if [[ "$serial" == emulator-* ]]; then
-    [[ "$(property ro.kernel.qemu)" == "1" ]] || fail "Nie potwierdzono emulatora przed instalacją."
-fi
+check_connection
+check_owner
 
 printf 'Instalowanie aktualizacji z zachowaniem danych aplikacji…\n'
 if ! result=$("$adb_bin" -s "$serial" install -r -t "$work_dir/$APK_NAME" </dev/null 2>&1); then
@@ -128,3 +166,36 @@ if ! result=$("$adb_bin" -s "$serial" install -r -t "$work_dir/$APK_NAME" </dev/
 fi
 [[ $'\n'"$result"$'\n' == *$'\nSuccess\n'* ]] || fail "ADB nie potwierdziło instalacji."
 printf 'Zainstalowano Stanowisko %s.\n' "$VERSION"
+
+check_owner
+if [[ "$owner" == "stanowisko" ]]; then
+    printf 'Stanowisko ma już rolę właściciela urządzenia. Zachowano dotychczasową konfigurację.\n'
+else
+    printf 'Do pełnej ochrony potrzebna jest rola właściciela urządzenia (Device Owner).\n'
+    printf 'Ta rola pozwala Stanowisku zarządzać urządzeniem i egzekwować ochronę.\n'
+    printf 'Czy nadać Stanowisku rolę właściciela na %s %s? [t/N] ' "$manufacturer" "$model" >&2
+    answer=""
+    if ! IFS= read -r answer </dev/tty; then
+        fail "APK zainstalowano, ale nie nadano roli właściciela. Uruchom tę samą komendę w interaktywnym terminalu."
+    fi
+    if [[ "$answer" != "t" && "$answer" != "T" ]]; then
+        printf 'Pominięto nadanie roli właściciela. Aplikacja jest zainstalowana, ale pełna ochrona wymaga tej roli.\n'
+        exit 0
+    fi
+
+    check_connection
+    check_owner
+    if [[ "$owner" == "none" ]]; then
+        if ! result=$("$adb_bin" -s "$serial" shell -n dpm set-device-owner --user 0 "$ADMIN_COMPONENT" 2>&1); then
+            printf '%s\n' "$result" >&2
+            fail "Android odmówił nadania roli właściciela. APK pozostaje zainstalowany. Sprawdź konta, profile i komunikat systemu."
+        fi
+        check_owner
+        if [[ "$owner" != "stanowisko" ]]; then
+            printf '%s\n' "$result" >&2
+            fail "Nie potwierdzono roli właściciela po konfiguracji. Pełna ochrona nie jest gotowa."
+        fi
+    fi
+    printf 'Potwierdzono rolę właściciela urządzenia dla Stanowiska.\n'
+fi
+printf 'Pełna ochrona wymaga także zapisania i zastosowania polityki w panelu administratora.\n'

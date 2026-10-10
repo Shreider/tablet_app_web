@@ -14,9 +14,13 @@ Podłącz jedno urządzenie przez USB. Włącz debugowanie USB i zatwierdź zgod
 curl -fsSL https://raw.githubusercontent.com/Shreider/tablet_app_web/android/install.sh | bash
 ```
 
-Instalator pobiera gotowy APK z wydania `android-v1.0.9`, sprawdza SHA-256 i wykonuje aktualizację z zachowaniem danych. Wymaga Androida 14+ oraz jednego dostępnego urządzenia. Korzysta z istniejącego ADB; jeśli go brakuje, może pobrać oficjalne [Android Platform-Tools](https://developer.android.com/tools/releases/platform-tools) dla Linuksa x86_64 po akceptacji licencji. Potrzebne są Bash, curl i standardowe narzędzia systemowe; do rozpakowania ADB także unzip lub Python 3.
+Instalator pobiera gotowy APK z wydania `android-v1.0.9`, sprawdza SHA-256 i wykonuje aktualizację z zachowaniem danych. Następnie sprawdza rolę właściciela urządzenia (Device Owner). Jeśli Stanowisko już ją ma, zachowuje konfigurację. Jeśli urządzenie nie ma właściciela, pyta w terminalu o zgodę na nadanie tej roli. Po odpowiedzi `t` wykonuje konfigurację przez ADB i potwierdza jej wynik. Nadanie roli nie włącza samo ochrony: w panelu administratora trzeba wybrać aplikacje, zapisać i zastosować politykę.
 
-Skrypt nie resetuje urządzenia, nie odinstalowuje poprzedniej aplikacji i nie nadaje roli Device Owner. Błąd autoryzacji USB, wiele urządzeń, niezgodna suma lub błąd instalacji zatrzymują procedurę.
+Wymagany jest Android 14+ oraz jedno dostępne urządzenie. Instalator korzysta z istniejącego ADB; jeśli go brakuje, może pobrać oficjalne [Android Platform-Tools](https://developer.android.com/tools/releases/platform-tools) dla Linuksa x86_64 po akceptacji licencji. Potrzebne są Bash, curl i standardowe narzędzia systemowe; do rozpakowania ADB także unzip lub Python 3.
+
+Skrypt nie resetuje urządzenia, nie odinstalowuje poprzedniej aplikacji ani nie usuwa kont lub profili. Przy innym administratorze zatrzymuje się przed instalacją. Błąd autoryzacji USB, wiele urządzeń, niezgodna suma lub błąd instalacji również zatrzymują procedurę. Jeśli Android odrzuci nadanie roli właściciela, instalator pokazuje przyczynę i kończy się błędem; zainstalowany APK pozostaje na urządzeniu. Przygotuj nowy tablet bez kont Google i dodatkowych profili. Android decyduje, czy można nadać tę rolę przez ADB — [warunki konfiguracji](https://developer.android.com/work/dpc/dedicated-devices/cookbook#development-setup).
+
+Odpowiedź `n` pomija nadanie roli. Bez interaktywnego terminala instalator nie nadaje jej i zgłasza, że konfiguracja jest niepełna. Zwykłe włączenie administratora w ustawieniach Androida nie zastępuje roli właściciela. Konfiguracja przez kod QR w kreatorze pierwszego uruchomienia nie jest jeszcze obsługiwana.
 
 Możesz też pobrać [APK i sumę kontrolną](https://github.com/Shreider/tablet_app_web/releases/tag/android-v1.0.9) i zainstalować aplikację ręcznie.
 
