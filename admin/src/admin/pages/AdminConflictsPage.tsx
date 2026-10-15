@@ -7,6 +7,7 @@ import {
   type ScheduleEntryFormPayload
 } from '../api/adminApi';
 import { useAdminAuth } from '../auth/AdminAuthContext';
+import { AdminDialog } from '../components/AdminDialog';
 import { AdminPanel, EmptyBlock, ErrorBlock, LoadingBlock } from '../components/AdminUi';
 import type { AdminConflictEntry, AdminConflictPair, AdminScheduleOptionsResponse } from '../types';
 
@@ -163,8 +164,7 @@ export function AdminConflictsPage(): JSX.Element {
       closeEdit();
       setReloadNonce((n) => n + 1);
     } catch (err) {
-      const msg =
-        err instanceof AdminApiError ? err.message : 'Nie udało się zapisać wpisu.';
+      const msg = err instanceof AdminApiError ? err.message : 'Nie udało się zapisać wpisu.';
       setEditState((prev) => ({ ...prev, saving: false, error: msg }));
     }
   };
@@ -222,194 +222,183 @@ export function AdminConflictsPage(): JSX.Element {
         )}
       </AdminPanel>
 
-      {editState.open && editState.entryId !== null && (
-        <div className="admin-modal-backdrop" onClick={closeEdit}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="admin-modal-title">Edytuj wpis #{editState.entryId}</h2>
-                <p className="admin-modal-text">Zmień dane, aby rozwiązać konflikt.</p>
-              </div>
-              <button
-                type="button"
-                className="admin-icon-btn text-base"
-                onClick={closeEdit}
-                aria-label="Zamknij"
+      <AdminDialog
+        open={editState.open && editState.entryId !== null}
+        title={`Edytuj wpis #${editState.entryId ?? ''}`}
+        subtitle="Zmień termin lub dane zajęć, aby rozwiązać konflikt."
+        onClose={closeEdit}
+        busy={editState.saving}
+        footer={
+          <>
+            <button
+              type="button"
+              className="admin-btn admin-btn-secondary"
+              onClick={closeEdit}
+              disabled={editState.saving}
+            >
+              Anuluj
+            </button>
+            <button
+              type="submit"
+              form="conflict-entry-form"
+              className="admin-btn admin-btn-primary"
+              disabled={editState.saving}
+            >
+              {editState.saving ? 'Zapisywanie…' : 'Zapisz zmiany'}
+            </button>
+          </>
+        }
+      >
+        <form id="conflict-entry-form" onSubmit={(e) => void submitEdit(e)} className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="admin-field">
+              <span className="admin-label">Sala</span>
+              <select
+                className="admin-input"
+                value={editState.form.roomId}
+                onChange={(e) => handleFormChange('roomId', Number(e.target.value))}
               >
-                ✕
-              </button>
-            </div>
+                <option value={0} disabled>
+                  Wybierz salę
+                </option>
+                {options.rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.roomCode} — {r.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            <form onSubmit={(e) => void submitEdit(e)} className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="admin-field">
-                  <label className="admin-label">Sala</label>
-                  <select
-                    className="admin-input"
-                    value={editState.form.roomId}
-                    onChange={(e) => handleFormChange('roomId', Number(e.target.value))}
-                  >
-                    <option value={0} disabled>
-                      Wybierz salę
-                    </option>
-                    {options.rooms.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.roomCode} — {r.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Data</span>
+              <input
+                type="date"
+                className="admin-input"
+                value={editState.form.eventDate}
+                onChange={(e) => handleFormChange('eventDate', e.target.value)}
+              />
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Data</label>
-                  <input
-                    type="date"
-                    className="admin-input"
-                    value={editState.form.eventDate}
-                    onChange={(e) => handleFormChange('eventDate', e.target.value)}
-                  />
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Godzina rozpoczęcia</span>
+              <input
+                type="time"
+                className="admin-input"
+                value={editState.form.startTime}
+                onChange={(e) => handleFormChange('startTime', e.target.value)}
+              />
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Godzina rozpoczęcia</label>
-                  <input
-                    type="time"
-                    className="admin-input"
-                    value={editState.form.startTime}
-                    onChange={(e) => handleFormChange('startTime', e.target.value)}
-                  />
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Godzina zakończenia</span>
+              <input
+                type="time"
+                className="admin-input"
+                value={editState.form.endTime}
+                onChange={(e) => handleFormChange('endTime', e.target.value)}
+              />
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Godzina zakończenia</label>
-                  <input
-                    type="time"
-                    className="admin-input"
-                    value={editState.form.endTime}
-                    onChange={(e) => handleFormChange('endTime', e.target.value)}
-                  />
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Prowadzący</span>
+              <select
+                className="admin-input"
+                value={editState.form.lecturerId}
+                onChange={(e) => handleFormChange('lecturerId', Number(e.target.value))}
+              >
+                <option value={0} disabled>
+                  Wybierz prowadzącego
+                </option>
+                {options.lecturers.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Prowadzący</label>
-                  <select
-                    className="admin-input"
-                    value={editState.form.lecturerId}
-                    onChange={(e) => handleFormChange('lecturerId', Number(e.target.value))}
-                  >
-                    <option value={0} disabled>
-                      Wybierz prowadzącego
-                    </option>
-                    {options.lecturers.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Grupa</span>
+              <select
+                className="admin-input"
+                value={editState.form.studentGroupId}
+                onChange={(e) => handleFormChange('studentGroupId', Number(e.target.value))}
+              >
+                <option value={0} disabled>
+                  Wybierz grupę
+                </option>
+                {options.studentGroups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Grupa</label>
-                  <select
-                    className="admin-input"
-                    value={editState.form.studentGroupId}
-                    onChange={(e) => handleFormChange('studentGroupId', Number(e.target.value))}
-                  >
-                    <option value={0} disabled>
-                      Wybierz grupę
-                    </option>
-                    {options.studentGroups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <label className="admin-field">
+              <span className="admin-label">Typ zajęć</span>
+              <select
+                className="admin-input"
+                value={editState.form.classTypeId}
+                onChange={(e) => handleFormChange('classTypeId', Number(e.target.value))}
+              >
+                <option value={0} disabled>
+                  Wybierz typ zajęć
+                </option>
+                {options.classTypes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-                <div className="admin-field">
-                  <label className="admin-label">Typ zajęć</label>
-                  <select
-                    className="admin-input"
-                    value={editState.form.classTypeId}
-                    onChange={(e) => handleFormChange('classTypeId', Number(e.target.value))}
-                  >
-                    <option value={0} disabled>
-                      Wybierz typ zajęć
-                    </option>
-                    {options.classTypes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="admin-field">
-                  <label className="admin-label">Przedmiot</label>
-                  <select
-                    className="admin-input"
-                    value={editState.form.subjectId}
-                    onChange={(e) => handleFormChange('subjectId', Number(e.target.value))}
-                  >
-                    <option value={0} disabled>
-                      Wybierz przedmiot
-                    </option>
-                    {options.subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} — {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="admin-field">
-                <label className="admin-label">Opis zajęć</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={editState.form.description}
-                  onChange={(e) => handleFormChange('description', e.target.value)}
-                />
-              </div>
-
-              <div className="admin-field">
-                <label className="admin-label">Notatka (opcjonalna)</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={editState.form.note}
-                  onChange={(e) => handleFormChange('note', e.target.value)}
-                />
-              </div>
-
-              {editState.error && (
-                <p className="m-0 rounded-lg border border-[#7b3654] bg-[#311a28] px-3 py-2 text-sm text-[#ffb4d1]">
-                  {editState.error}
-                </p>
-              )}
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="admin-btn admin-btn-primary"
-                  disabled={editState.saving}
-                >
-                  {editState.saving ? 'Zapisywanie…' : 'Zapisz zmiany'}
-                </button>
-                <button
-                  type="button"
-                  className="admin-btn admin-btn-secondary"
-                  onClick={closeEdit}
-                  disabled={editState.saving}
-                >
-                  Anuluj
-                </button>
-              </div>
-            </form>
+            <label className="admin-field">
+              <span className="admin-label">Przedmiot</span>
+              <select
+                className="admin-input"
+                value={editState.form.subjectId}
+                onChange={(e) => handleFormChange('subjectId', Number(e.target.value))}
+              >
+                <option value={0} disabled>
+                  Wybierz przedmiot
+                </option>
+                {options.subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.code} — {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        </div>
-      )}
+
+          <label className="admin-field">
+            <span className="admin-label">Opis zajęć</span>
+            <input
+              type="text"
+              className="admin-input"
+              value={editState.form.description}
+              onChange={(e) => handleFormChange('description', e.target.value)}
+            />
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-label">Notatka (opcjonalna)</span>
+            <input
+              type="text"
+              className="admin-input"
+              value={editState.form.note}
+              onChange={(e) => handleFormChange('note', e.target.value)}
+            />
+          </label>
+
+          {editState.error && (
+            <p role="alert" className="admin-notice admin-notice--error">
+              {editState.error}
+            </p>
+          )}
+        </form>
+      </AdminDialog>
     </div>
   );
 }
@@ -424,19 +413,19 @@ function ConflictPairCard({
   onEdit: (entry: AdminConflictEntry) => void;
 }): JSX.Element {
   return (
-    <div className="rounded-2xl border border-[#4b2d3a] bg-[#1a1020] p-4">
+    <div className="admin-conflict-pair">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="rounded-full border border-[#7b3654] bg-[#311a28] px-2.5 py-0.5 text-xs font-semibold text-[#ffb4d1]">
           Konflikt #{index}
         </span>
-        <span className="text-sm text-[#c0a0b8]">
-          Sala: <strong className="text-[#f0d0e8]">{pair.entryA.roomCode}</strong>
+        <span className="text-sm text-[#a6bbdb]">
+          Sala: <strong className="text-[#eaf3ff]">{pair.entryA.roomCode}</strong>
           {pair.entryA.roomDisplayName !== pair.entryA.roomCode
             ? ` — ${pair.entryA.roomDisplayName}`
             : ''}
         </span>
-        <span className="text-sm text-[#c0a0b8]">
-          Data: <strong className="text-[#f0d0e8]">{pair.entryA.eventDate}</strong>
+        <span className="text-sm text-[#a6bbdb]">
+          Data: <strong className="text-[#eaf3ff]">{pair.entryA.eventDate}</strong>
         </span>
       </div>
 
@@ -456,9 +445,9 @@ function ConflictEntryCard({
   onEdit: (entry: AdminConflictEntry) => void;
 }): JSX.Element {
   return (
-    <div className="rounded-xl border border-[#3a2838] bg-[#120d18] p-3">
+    <div className="admin-conflict-entry">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#9a7a98]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#a6bbdb]">
           Wpis #{entry.id}
         </span>
         <button
@@ -472,41 +461,41 @@ function ConflictEntryCard({
 
       <div className="grid gap-1.5 text-sm">
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Czas:</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Czas:</span>
           <span className="font-semibold text-[#ffb4d1]">
             {entry.startTime} – {entry.endTime}
           </span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Tytuł:</span>
-          <span className="text-[#e8d4e4]">{entry.title}</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Tytuł:</span>
+          <span className="text-[#eaf3ff]">{entry.title}</span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Opis:</span>
-          <span className="text-[#e8d4e4]">{entry.description}</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Opis:</span>
+          <span className="text-[#eaf3ff]">{entry.description}</span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Prowadzący:</span>
-          <span className="text-[#e8d4e4]">{entry.lecturerName}</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Prowadzący:</span>
+          <span className="text-[#eaf3ff]">{entry.lecturerName}</span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Grupa:</span>
-          <span className="text-[#e8d4e4]">{entry.studentGroupName}</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Grupa:</span>
+          <span className="text-[#eaf3ff]">{entry.studentGroupName}</span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Typ:</span>
-          <span className="text-[#e8d4e4]">{entry.classTypeName}</span>
+          <span className="min-w-[80px] text-[#a6bbdb]">Typ:</span>
+          <span className="text-[#eaf3ff]">{entry.classTypeName}</span>
         </div>
         <div className="flex gap-2">
-          <span className="min-w-[80px] text-[#9a7a98]">Przedmiot:</span>
-          <span className="text-[#e8d4e4]">
+          <span className="min-w-[80px] text-[#a6bbdb]">Przedmiot:</span>
+          <span className="text-[#eaf3ff]">
             {entry.subjectCode} — {entry.subjectName}
           </span>
         </div>
         {entry.note && (
           <div className="flex gap-2">
-            <span className="min-w-[80px] text-[#9a7a98]">Notatka:</span>
-            <span className="text-[#e8d4e4]">{entry.note}</span>
+            <span className="min-w-[80px] text-[#a6bbdb]">Notatka:</span>
+            <span className="text-[#eaf3ff]">{entry.note}</span>
           </div>
         )}
       </div>

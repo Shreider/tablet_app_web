@@ -1,16 +1,25 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
+import { AdminDialog } from './AdminDialog';
 
-export function AdminPanel({ title, subtitle, actions, children }: {
+export function AdminPanel({
+  title,
+  subtitle,
+  actions,
+  children
+}: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
 }): JSX.Element {
+  const titleId = useId();
   return (
-    <section className="admin-surface">
+    <section className="admin-surface" aria-labelledby={titleId}>
       <header className="admin-panel-header">
         <div>
-          <h2 className="admin-panel-title">{title}</h2>
+          <h2 id={titleId} className="admin-panel-title">
+            {title}
+          </h2>
           {subtitle ? <p className="admin-panel-subtitle">{subtitle}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -22,9 +31,9 @@ export function AdminPanel({ title, subtitle, actions, children }: {
 
 export function LoadingBlock({ message }: { message: string }): JSX.Element {
   return (
-    <div className="admin-centered-block">
+    <div className="admin-centered-block" role="status">
       <div className="admin-spinner" aria-hidden="true" />
-      <p className="m-0 text-sm text-[#93a6c7]">{message}</p>
+      <p className="m-0 text-sm text-[#a6bbdb]">{message}</p>
     </div>
   );
 }
@@ -39,7 +48,7 @@ export function ErrorBlock({
   onRetry?: () => void;
 }): JSX.Element {
   return (
-    <div className="admin-centered-block border border-[#4b2d3a] bg-[#2b1821] text-[#ffc5d4]">
+    <div className="admin-centered-block admin-state-error" role="alert">
       <h3 className="m-0 text-base font-semibold">{title}</h3>
       <p className="m-0 text-sm">{message}</p>
       {onRetry ? (
@@ -53,7 +62,7 @@ export function ErrorBlock({
 
 export function EmptyBlock({ message }: { message: string }): JSX.Element {
   return (
-    <div className="admin-centered-block border border-dashed border-[#334562] bg-[#111926] text-[#8ca0c4]">
+    <div className="admin-centered-block admin-state-empty" role="status">
       <p className="m-0 text-sm">{message}</p>
     </div>
   );
@@ -70,7 +79,7 @@ export function PaginationControls({
 }): JSX.Element {
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-      <p className="m-0 text-sm text-[#8ca0c4]">
+      <p className="m-0 text-sm text-[#a6bbdb]">
         Strona {page} / {totalPages}
       </p>
       <div className="flex items-center gap-2">
@@ -125,6 +134,7 @@ export function ConfirmModal({
   destructive = false,
   busy = false,
   hideCancel = false,
+  confirmDisabled = false,
   children
 }: {
   open: boolean;
@@ -137,27 +147,25 @@ export function ConfirmModal({
   destructive?: boolean;
   busy?: boolean;
   hideCancel?: boolean;
+  confirmDisabled?: boolean;
   children?: ReactNode;
 }): JSX.Element | null {
-  if (!open) {
-    return null;
-  }
-
   return (
-    <div className="admin-modal-backdrop" role="presentation" onClick={onCancel}>
-      <article
-        className="admin-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h3 className="admin-modal-title">{title}</h3>
-        <p className="admin-modal-text">{message}</p>
-        {children ? <div className="mt-3">{children}</div> : null}
-        <div className="mt-5 flex justify-end gap-2">
-          {hideCancel ? null : (
-            <button type="button" className="admin-btn admin-btn-secondary" onClick={onCancel} disabled={busy}>
+    <AdminDialog
+      open={open}
+      title={title}
+      subtitle={message}
+      onClose={onCancel}
+      busy={busy}
+      footer={
+        <>
+          {!hideCancel && (
+            <button
+              type="button"
+              className="admin-btn admin-btn-secondary"
+              onClick={onCancel}
+              disabled={busy}
+            >
               {cancelLabel ?? 'Anuluj'}
             </button>
           )}
@@ -165,13 +173,15 @@ export function ConfirmModal({
             type="button"
             className={destructive ? 'admin-btn admin-btn-danger' : 'admin-btn admin-btn-primary'}
             onClick={onConfirm}
-            disabled={busy}
+            disabled={busy || confirmDisabled}
           >
-            {busy ? 'Trwa...' : confirmLabel}
+            {busy ? 'Trwa…' : confirmLabel}
           </button>
-        </div>
-      </article>
-    </div>
+        </>
+      }
+    >
+      {children}
+    </AdminDialog>
   );
 }
 

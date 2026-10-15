@@ -117,7 +117,8 @@ export function AdminRoomsPage(): JSX.Element {
         rows: payload.rows
       });
     } catch (error) {
-      const message = error instanceof AdminApiError ? error.message : 'Nie udało się pobrać listy sal.';
+      const message =
+        error instanceof AdminApiError ? error.message : 'Nie udało się pobrać listy sal.';
 
       setState((prev) => ({
         ...prev,
@@ -289,14 +290,16 @@ export function AdminRoomsPage(): JSX.Element {
         );
         setDeleteCascade(true);
       } else {
-        setDeleteError(error instanceof AdminApiError ? error.message : 'Nie udało się usunąć sali.');
+        setDeleteError(
+          error instanceof AdminApiError ? error.message : 'Nie udało się usunąć sali.'
+        );
       }
     } finally {
       setDeleteBusy(false);
     }
   };
 
-  const totalLabel = useMemo(() => `Łącznie rekordów: ${state.total}`, [state.total]);
+  const totalLabel = useMemo(() => `Liczba pozycji: ${state.total}`, [state.total]);
 
   return (
     <div className="space-y-4">
@@ -309,83 +312,114 @@ export function AdminRoomsPage(): JSX.Element {
           </button>
         }
       >
-        <div className="grid gap-3 pb-4 md:grid-cols-2 xl:grid-cols-6">
-          <label className="admin-field xl:col-span-2">
-            <span className="admin-label">Wyszukiwarka</span>
-            <div className="flex gap-2">
-              <input
+        <details className="admin-filters">
+          <summary>
+            Filtry i sortowanie
+            <span className="admin-filter-count">
+              {[search, floorId].filter(Boolean).length || 'Wszystkie sale'}
+            </span>
+          </summary>
+          <div className="admin-filter-grid">
+            <div className="admin-field admin-search">
+              <label htmlFor="room-search" className="admin-label">
+                Wyszukiwarka
+              </label>
+              <div className="flex gap-2">
+                <input
+                  className="admin-input"
+                  id="room-search"
+                  value={searchDraft}
+                  onChange={(event) => setSearchDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      setPage(1);
+                      setSearch(searchDraft.trim());
+                    }
+                  }}
+                  placeholder="kod, nazwa"
+                />
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-secondary"
+                  onClick={() => {
+                    setPage(1);
+                    setSearch(searchDraft.trim());
+                  }}
+                >
+                  Szukaj
+                </button>
+              </div>
+            </div>
+
+            <label className="admin-field">
+              <span className="admin-label">Piętro</span>
+              <select
                 className="admin-input"
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="kod, nazwa"
-              />
-              <button
-                type="button"
-                className="admin-btn admin-btn-secondary"
-                onClick={() => {
+                value={floorId ?? ''}
+                onChange={(event) => {
                   setPage(1);
-                  setSearch(searchDraft.trim());
+                  setFloorId(event.target.value ? Number(event.target.value) : null);
                 }}
               >
-                Szukaj
-              </button>
-            </div>
-          </label>
+                <option value="">Wszystkie</option>
+                {options.floors.map((floor) => (
+                  <option key={floor.id} value={floor.id}>
+                    {floor.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="admin-field">
-            <span className="admin-label">Piętro</span>
-            <select
-              className="admin-input"
-              value={floorId ?? ''}
-              onChange={(event) => {
+            <label className="admin-field">
+              <span className="admin-label">Sortuj po</span>
+              <select
+                className="admin-input"
+                value={sortBy}
+                onChange={(event) => {
+                  setPage(1);
+                  setSortBy(event.target.value);
+                }}
+              >
+                <option value="roomCode">Kod sali</option>
+                <option value="displayName">Nazwa</option>
+                <option value="entriesCount">Liczba wpisów</option>
+                <option value="updatedAt">Data modyfikacji</option>
+              </select>
+            </label>
+
+            <label className="admin-field">
+              <span className="admin-label">Kolejność</span>
+              <select
+                className="admin-input"
+                value={sortOrder}
+                onChange={(event) => {
+                  setPage(1);
+                  setSortOrder(event.target.value as 'asc' | 'desc');
+                }}
+              >
+                <option value="asc">Rosnąco</option>
+                <option value="desc">Malejąco</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="admin-btn admin-btn-secondary self-end"
+              onClick={() => {
+                setSearchDraft('');
+                setSearch('');
+                setFloorId(null);
+                setSortBy('roomCode');
+                setSortOrder('asc');
                 setPage(1);
-                setFloorId(event.target.value ? Number(event.target.value) : null);
               }}
             >
-              <option value="">Wszystkie</option>
-              {options.floors.map((floor) => (
-                <option key={floor.id} value={floor.id}>
-                  {floor.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-label">Sortuj po</span>
-            <select
-              className="admin-input"
-              value={sortBy}
-              onChange={(event) => {
-                setPage(1);
-                setSortBy(event.target.value);
-              }}
-            >
-              <option value="roomCode">Kod sali</option>
-              <option value="displayName">Nazwa</option>
-              <option value="entriesCount">Liczba wpisów</option>
-              <option value="updatedAt">Data modyfikacji</option>
-            </select>
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-label">Kierunek</span>
-            <select
-              className="admin-input"
-              value={sortOrder}
-              onChange={(event) => {
-                setPage(1);
-                setSortOrder(event.target.value as 'asc' | 'desc');
-              }}
-            >
-              <option value="asc">Rosnąco</option>
-              <option value="desc">Malejąco</option>
-            </select>
-          </label>
-        </div>
+              Wyczyść filtry
+            </button>
+          </div>
+        </details>
 
         {flashMessage ? (
-          <p className="mb-3 rounded-xl border border-[#2c5b45] bg-[#102a20] px-3 py-2 text-sm text-[#a7e7c6]">
+          <p role="status" className="admin-notice admin-notice--ok mb-3">
             {flashMessage}
           </p>
         ) : null}
@@ -393,7 +427,11 @@ export function AdminRoomsPage(): JSX.Element {
         {state.loading ? (
           <LoadingBlock message="Ładowanie listy sal..." />
         ) : state.error ? (
-          <ErrorBlock title="Błąd listy sal" message={state.error} onRetry={() => void loadRooms()} />
+          <ErrorBlock
+            title="Błąd listy sal"
+            message={state.error}
+            onRetry={() => void loadRooms()}
+          />
         ) : state.rows.length === 0 ? (
           <EmptyBlock message="Brak rekordów dla wybranych filtrów." />
         ) : (
@@ -402,23 +440,23 @@ export function AdminRoomsPage(): JSX.Element {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Kod</th>
-                    <th>Nazwa</th>
-                    <th>Piętro</th>
-                    <th>Wpisy</th>
-                    <th>Aktualizacja</th>
-                    <th>Akcje</th>
+                    <th scope="col">Kod</th>
+                    <th scope="col">Nazwa</th>
+                    <th scope="col">Piętro</th>
+                    <th scope="col">Wpisy</th>
+                    <th scope="col">Aktualizacja</th>
+                    <th scope="col">Akcje</th>
                   </tr>
                 </thead>
                 <tbody>
                   {state.rows.map((room) => (
                     <tr key={room.id}>
-                      <td>{room.roomCode}</td>
-                      <td>{room.displayName}</td>
-                      <td>{room.floorLabel}</td>
-                      <td>{room.entriesCount}</td>
-                      <td>{formatDateTime(room.updatedAt)}</td>
-                      <td>
+                      <td data-label="Kod">{room.roomCode}</td>
+                      <td data-label="Nazwa">{room.displayName}</td>
+                      <td data-label="Piętro">{room.floorLabel}</td>
+                      <td data-label="Wpisy">{room.entriesCount}</td>
+                      <td data-label="Aktualizacja">{formatDateTime(room.updatedAt)}</td>
+                      <td data-label="Akcje">
                         <div className="flex flex-wrap gap-1">
                           <button
                             type="button"
@@ -448,14 +486,20 @@ export function AdminRoomsPage(): JSX.Element {
                 </tbody>
               </table>
             </div>
-            <PaginationControls page={state.page} totalPages={state.totalPages} onPageChange={setPage} />
+            <PaginationControls
+              page={state.page}
+              totalPages={state.totalPages}
+              onPageChange={setPage}
+            />
           </>
         )}
       </AdminPanel>
 
       <ConfirmModal
         open={formOpen}
-        title={formMode === 'create' ? 'Dodaj nową salę' : `Edytuj salę ${editingRoom?.roomCode ?? ''}`}
+        title={
+          formMode === 'create' ? 'Dodaj nową salę' : `Edytuj salę ${editingRoom?.roomCode ?? ''}`
+        }
         message="Wprowadź dane sali."
         confirmLabel={formMode === 'create' ? 'Dodaj salę' : 'Zapisz zmiany'}
         onCancel={() => {
@@ -475,7 +519,9 @@ export function AdminRoomsPage(): JSX.Element {
             <input
               className="admin-input"
               value={formState.roomCode}
-              onChange={(event) => setFormState((prev) => ({ ...prev, roomCode: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, roomCode: event.target.value }))
+              }
               placeholder="np. A12"
               required
             />
@@ -512,7 +558,7 @@ export function AdminRoomsPage(): JSX.Element {
           </label>
 
           {formError ? (
-            <p className="m-0 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
+            <p role="alert" className="admin-notice admin-notice--error">
               {formError}
             </p>
           ) : null}
@@ -521,7 +567,9 @@ export function AdminRoomsPage(): JSX.Element {
 
       <ConfirmModal
         open={detailsOpen}
-        title={detailsState.room ? `Szczegóły sali ${detailsState.room.roomCode}` : 'Szczegóły sali'}
+        title={
+          detailsState.room ? `Szczegóły sali ${detailsState.room.roomCode}` : 'Szczegóły sali'
+        }
         message="Powiązane wpisy harmonogramu dla wybranej sali."
         confirmLabel="Zamknij"
         hideCancel
@@ -534,7 +582,15 @@ export function AdminRoomsPage(): JSX.Element {
           <ErrorBlock title="Błąd szczegółów" message={detailsState.error} />
         ) : detailsState.room ? (
           <div className="space-y-3">
-            <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#b8cae8] md:grid-cols-2">
+            <a
+              className="admin-btn admin-btn-secondary"
+              href={`${(import.meta.env.VITE_PUBLIC_APP_BASE_URL || 'http://localhost:5173').replace(/\/$/, '')}/room/${encodeURIComponent(detailsState.room.roomCode)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Otwórz widok sali {detailsState.room.roomCode}
+            </a>
+            <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#a6bbdb] md:grid-cols-2">
               <p className="m-0">
                 Nazwa: <strong>{detailsState.room.displayName}</strong>
               </p>
@@ -552,25 +608,25 @@ export function AdminRoomsPage(): JSX.Element {
             {detailsState.entries.length === 0 ? (
               <EmptyBlock message="Brak wpisów harmonogramu dla tej sali." />
             ) : (
-              <div className="max-h-[260px] overflow-y-auto rounded-xl border border-[#293e5e]">
+              <div className="admin-table-wrap max-h-[360px] overflow-y-auto">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Data</th>
-                      <th>Godz.</th>
-                      <th>Tytuł</th>
-                      <th>Typ</th>
+                      <th scope="col">Data</th>
+                      <th scope="col">Godz.</th>
+                      <th scope="col">Tytuł</th>
+                      <th scope="col">Typ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {detailsState.entries.map((entry) => (
                       <tr key={entry.id}>
-                        <td>{entry.eventDate}</td>
-                        <td>
+                        <td data-label="Data">{entry.eventDate}</td>
+                        <td data-label="Godz.">
                           {entry.startTime}-{entry.endTime}
                         </td>
-                        <td>{entry.title}</td>
-                        <td>{entry.classTypeName}</td>
+                        <td data-label="Tytuł">{entry.title}</td>
+                        <td data-label="Typ">{entry.classTypeName}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -595,7 +651,7 @@ export function AdminRoomsPage(): JSX.Element {
         destructive
         busy={deleteBusy}
       >
-        <label className="flex items-center gap-2 text-sm text-[#b9cbe8]">
+        <label className="flex items-center gap-2 text-sm text-[#a6bbdb]">
           <input
             type="checkbox"
             checked={deleteCascade}
@@ -604,7 +660,7 @@ export function AdminRoomsPage(): JSX.Element {
           Wymuś usunięcie kaskadowe powiązanych wpisów.
         </label>
         {deleteError ? (
-          <p className="mt-2 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
+          <p role="alert" className="admin-notice admin-notice--error">
             {deleteError}
           </p>
         ) : null}

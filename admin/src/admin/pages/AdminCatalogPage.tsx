@@ -13,7 +13,6 @@ import {
   adminEntityKeysBySection,
   adminEntityMetaByKey,
   resolveEntityForSection,
-  sectionLabelMap,
   type AdminEntitySection
 } from '../config/adminNavigation';
 import {
@@ -75,7 +74,10 @@ const initialDatasetState: DatasetState = {
   data: null
 };
 
-const getDatasetCount = (data: AdminReferencesDatasetResponse, entity: AdminReferenceEntity): number => {
+const getDatasetCount = (
+  data: AdminReferencesDatasetResponse,
+  entity: AdminReferenceEntity
+): number => {
   switch (entity) {
     case 'floors':
       return data.floors.length;
@@ -136,7 +138,8 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         data: payload
       });
     } catch (error) {
-      const message = error instanceof AdminApiError ? error.message : 'Nie udało się pobrać danych sekcji.';
+      const message =
+        error instanceof AdminApiError ? error.message : 'Nie udało się pobrać danych sekcji.';
       setState({
         loading: false,
         error: message,
@@ -256,7 +259,10 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     }
   };
 
-  const validateReferenceForm = (entityKey: AdminReferenceEntity, data: ReferenceFormState): string | null => {
+  const validateReferenceForm = (
+    entityKey: AdminReferenceEntity,
+    data: ReferenceFormState
+  ): string | null => {
     if (
       entityKey === 'student-groups' ||
       entityKey === 'class-types' ||
@@ -389,7 +395,8 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
       setFlashMessage(`Usunięto pozycję z sekcji: ${currentMeta.label}.`);
       await loadDataset();
     } catch (error) {
-      const apiMessage = error instanceof AdminApiError ? error.message : 'Nie udało się usunąć rekordu.';
+      const apiMessage =
+        error instanceof AdminApiError ? error.message : 'Nie udało się usunąć rekordu.';
       setDeleteError(apiMessage);
     } finally {
       setDeleteBusy(false);
@@ -416,14 +423,14 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
     <div className="space-y-4">
       <AdminPanel
         title={currentMeta.label}
-        subtitle={`${sectionLabelMap[section]}. ${currentMeta.description}`}
+        subtitle={`${currentMeta.description} Aktywne pozycje: ${activeCount} z ${selectedRows.length}.`}
         actions={
           <button type="button" className="admin-btn admin-btn-primary" onClick={openCreateForm}>
             {currentMeta.createLabel}
           </button>
         }
       >
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="admin-catalog-tabs" aria-label="Sekcje danych">
           {sectionEntities.map((entityKey) => {
             const meta = adminEntityMetaByKey[entityKey];
             const isActive = selectedEntity === entityKey;
@@ -432,7 +439,10 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
               <Link
                 key={entityKey}
                 to={meta.route}
-                className={isActive ? 'admin-btn admin-btn-primary' : 'admin-btn admin-btn-secondary'}
+                aria-current={isActive ? 'page' : undefined}
+                className={
+                  isActive ? 'admin-btn admin-btn-primary' : 'admin-btn admin-btn-secondary'
+                }
               >
                 {meta.label} ({getDatasetCount(dataset, entityKey)})
               </Link>
@@ -441,7 +451,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         </div>
 
         {flashMessage ? (
-          <p className="mb-3 rounded-xl border border-[#2c5b45] bg-[#102a20] px-3 py-2 text-sm text-[#a7e7c6]">
+          <p role="status" className="admin-notice admin-notice--ok mb-3">
             {flashMessage}
           </p>
         ) : null}
@@ -453,12 +463,12 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Wartość</th>
-                  {selectedEntity === 'subjects' && <th>Powiązanie</th>}
-                  <th>Status</th>
-                  <th>Aktualizacja</th>
-                  <th>Akcje</th>
+                  <th scope="col">ID</th>
+                  <th scope="col">Wartość</th>
+                  {selectedEntity === 'subjects' && <th scope="col">Powiązanie</th>}
+                  <th scope="col">Status</th>
+                  <th scope="col">Aktualizacja</th>
+                  <th scope="col">Akcje</th>
                 </tr>
               </thead>
               <tbody>
@@ -478,18 +488,18 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
 
                   return (
                     <tr key={rowId}>
-                      <td>{rowId}</td>
-                      <td>{primary}</td>
+                      <td data-label="ID">{rowId}</td>
+                      <td data-label="Wartość">{primary}</td>
                       {selectedEntity === 'subjects' && (
-                        <td>{String(typedRow.fieldOfStudyName)}</td>
+                        <td data-label="Powiązanie">{String(typedRow.fieldOfStudyName)}</td>
                       )}
-                      <td>
+                      <td data-label="Status">
                         <StatusBadge tone={isActive ? 'ok' : 'warn'}>
                           {isActive ? 'Aktywny' : 'Nieaktywny'}
                         </StatusBadge>
                       </td>
-                      <td>{formatDateTime(updatedAt)}</td>
-                      <td>
+                      <td data-label="Aktualizacja">{formatDateTime(updatedAt)}</td>
+                      <td data-label="Akcje">
                         <div className="flex flex-wrap gap-1">
                           <button
                             type="button"
@@ -518,8 +528,10 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
 
       <ConfirmModal
         open={formOpen}
-        title={formMode === 'create' ? currentMeta.createLabel : `Edytuj rekord #${editingId ?? ''}`}
-        message="Wypełnij pola i zapisz zmiany. Powiązania wybieraj z list kontrolowanych."
+        title={
+          formMode === 'create' ? currentMeta.createLabel : `Edytuj rekord #${editingId ?? ''}`
+        }
+        message="Uzupełnij dane i zapisz zmiany."
         confirmLabel={formMode === 'create' ? 'Dodaj' : 'Zapisz zmiany'}
         onCancel={() => {
           if (!formBusy) {
@@ -552,7 +564,9 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                 <input
                   className="admin-input"
                   value={formState.label}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, label: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((prev) => ({ ...prev, label: event.target.value }))
+                  }
                   required
                 />
               </label>
@@ -576,7 +590,9 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                 <input
                   className="admin-input"
                   value={formState.code}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, code: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((prev) => ({ ...prev, code: event.target.value }))
+                  }
                   required
                 />
               </label>
@@ -585,17 +601,22 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
                 <input
                   className="admin-input"
                   value={formState.name}
-                  onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((prev) => ({ ...prev, name: event.target.value }))
+                  }
                   required
                 />
               </label>
               <label className="admin-field md:col-span-3">
-                <span className="admin-label">Kierunek</span>
+                <span className="admin-label">Kolejność</span>
                 <select
                   className="admin-input"
                   value={formState.fieldOfStudyId}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, fieldOfStudyId: Number(event.target.value) }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      fieldOfStudyId: Number(event.target.value)
+                    }))
                   }
                   required
                 >
@@ -614,13 +635,15 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
               <input
                 className="admin-input"
                 value={formState.name}
-                onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((prev) => ({ ...prev, name: event.target.value }))
+                }
                 required
               />
             </label>
           )}
 
-          <label className="flex items-center gap-2 text-sm text-[#b9cbe8]">
+          <label className="flex items-center gap-2 text-sm text-[#a6bbdb]">
             <input
               type="checkbox"
               checked={formState.isActive}
@@ -632,7 +655,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
           </label>
 
           {formError ? (
-            <p className="m-0 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
+            <p role="alert" className="admin-notice admin-notice--error">
               {formError}
             </p>
           ) : null}
@@ -652,6 +675,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         }}
         onConfirm={() => void confirmDelete()}
         destructive
+        confirmDisabled={Boolean(deleteState?.dependencies.length)}
         busy={deleteBusy || deleteState?.checkingDependencies}
       >
         {deleteState?.checkingDependencies ? (
@@ -662,7 +686,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
               Ta pozycja jest używana i nie może zostać usunięta.
             </p>
             {deleteState.dependencies.map((dependency) => (
-              <p key={dependency.key} className="m-0 text-sm text-[#b9cbe8]">
+              <p key={dependency.key} className="m-0 text-sm text-[#a6bbdb]">
                 {dependency.message}: <strong>{dependency.count}</strong>
               </p>
             ))}
@@ -670,7 +694,7 @@ export function AdminCatalogPage({ section }: AdminCatalogPageProps): JSX.Elemen
         ) : null}
 
         {deleteError ? (
-          <p className="mt-2 rounded-lg border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
+          <p role="alert" className="admin-notice admin-notice--error">
             {deleteError}
           </p>
         ) : null}

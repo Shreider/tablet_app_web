@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AdminApiError } from '../api/adminApi';
 import { useAdminAuth } from '../auth/AdminAuthContext';
+import { AdminIcon } from '../components/AdminIcon';
 
 export function AdminLoginPage(): JSX.Element {
   const { status, login } = useAdminAuth();
@@ -9,6 +10,10 @@ export function AdminLoginPage(): JSX.Element {
   const [tokenInput, setTokenInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = 'Logowanie · Panel administratora';
+  }, []);
 
   const redirectPath =
     typeof location.state === 'object' &&
@@ -41,35 +46,46 @@ export function AdminLoginPage(): JSX.Element {
   };
 
   return (
-    <div className="admin-shell flex min-h-screen items-center justify-center p-4">
-      <section className="w-full max-w-[520px] rounded-[24px] border border-[#2b3f5b] bg-[#0f1726]/95 p-7 shadow-[0_30px_80px_rgba(1,4,14,0.55)]">
-        <p className="m-0 text-xs uppercase tracking-[0.16em] text-[#8ca0c4]">Admin Access</p>
-        <h1 className="mt-2 text-3xl font-semibold text-[#f1f6ff]">Logowanie administratora</h1>
-        <p className="mt-2 text-sm text-[#9cb0d2]">
-          Podaj token administratora, aby zarządzać danymi w bazie projektu.
+    <div className="admin-login">
+      <section className="admin-login-card">
+        <span className="admin-brand-icon mb-5">
+          <AdminIcon name="rooms" size={26} />
+        </span>
+        <p className="admin-kicker">Panel administratora</p>
+        <h1 className="mt-2 text-3xl font-semibold text-[#f1f6ff]">Zarządzaj planem zajęć</h1>
+        <p className="mt-2 text-sm text-[#a6bbdb]">
+          Zaloguj się, aby edytować sale, harmonogram i dane zajęć.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
           <label className="admin-field">
-            <span className="admin-label">Token admina</span>
+            <span className="admin-label">Token dostępu</span>
             <input
               className="admin-input"
               type="password"
               value={tokenInput}
               onChange={(event) => setTokenInput(event.target.value)}
-              placeholder="Wprowadź ADMIN_TOKEN"
+              placeholder="Wprowadź token administratora"
               autoComplete="current-password"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-invalid={Boolean(errorMessage)}
+              aria-describedby={errorMessage ? 'login-error' : undefined}
               required
             />
           </label>
 
           {errorMessage ? (
-            <p className="m-0 rounded-xl border border-[#4b2d3a] bg-[#2b1821] px-3 py-2 text-sm text-[#ffc5d4]">
+            <p id="login-error" role="alert" className="admin-notice admin-notice--error">
               {errorMessage}
             </p>
           ) : null}
 
-          <button type="submit" className="admin-btn admin-btn-primary w-full" disabled={submitting}>
+          <button
+            type="submit"
+            className="admin-btn admin-btn-primary w-full"
+            disabled={submitting}
+          >
             {submitting ? 'Logowanie...' : 'Zaloguj do panelu'}
           </button>
         </form>
