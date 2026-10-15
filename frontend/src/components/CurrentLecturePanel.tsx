@@ -8,8 +8,8 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
   if (!lecture) {
     return (
       <section
-        className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
-        aria-label="Aktualnie trwające zajęcia"
+        className="flex min-h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
+        aria-label="Wybrane zajęcia"
       >
         <span className="inline-flex w-fit items-center rounded-full border border-border bg-surface/50 px-3 py-1 text-base font-semibold text-foreground">
           Brak zajęć
@@ -28,13 +28,13 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
     lecture.status === 'current'
       ? 'Trwa teraz'
       : lecture.status === 'upcoming'
-        ? 'Najbliższe zajęcia'
-        : 'Ostatnie zajęcia';
+        ? 'Nadchodzące zajęcia'
+        : 'Zakończone zajęcia';
 
   return (
     <section
-      className="flex h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
-      aria-label="Aktualnie trwające zajęcia"
+      className="flex min-h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel motion-safe:animate-fade-in sm:p-6"
+      aria-label="Wybrane zajęcia"
     >
       <span className="inline-flex w-fit items-center rounded-full border border-primary/60 bg-primary/25 px-3 py-1 text-base font-semibold text-foreground">
         {statusLabel}
@@ -44,7 +44,7 @@ export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.
         {lecture.startTime} - {lecture.endTime}
       </p>
 
-      <dl className="mb-5 mt-6 grid grid-cols-2 gap-5 max-[1160px]:grid-cols-1">
+      <dl className="mb-5 mt-6 grid grid-cols-2 gap-4 max-[540px]:grid-cols-1">
         <div className="rounded-card border border-border bg-surface/60 p-5">
           <dt className="mb-1 text-sm font-bold uppercase tracking-[0.08em] text-muted">Prowadzący</dt>
           <dd className="m-0 text-lg font-semibold text-foreground">{lecture.lecturer}</dd>
