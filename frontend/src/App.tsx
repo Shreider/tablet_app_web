@@ -1,55 +1,77 @@
 import { useState } from 'react';
-import { AppLayout } from './components/AppLayout';
-import { LectureNavigator } from './components/LectureNavigator';
 import { HeaderBar } from './components/HeaderBar';
-import { LectureDetailsModal } from './components/LectureDetailsModal';
+import { LectureNavigator } from './components/LectureNavigator';
 import { ScheduleSidebar } from './components/ScheduleSidebar';
-import type { LectureEvent } from './types/schedule';
+import { Icon } from './components/Icon';
+import { formatTime } from './lib/schedule';
+import type { RoomScheduleResponse } from './types/schedule';
 
 interface AppProps {
-  room: {
-    roomId: string;
-    building: string;
-    floor: string;
-  };
-  schedule: LectureEvent[];
-  currentLecture: LectureEvent | null;
+  data: RoomScheduleResponse;
+  error: string | null;
+  onRefresh: () => void;
 }
 
-export default function App({ room, schedule, currentLecture }: AppProps): JSX.Element {
-  const [selectedLecture, setSelectedLecture] = useState<LectureEvent | null>(null);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const { room, schedule, currentLecture, nextLecture } = data;
+  const defaultLecture = currentLecture ?? nextLecture ?? schedule[schedule.length - 1] ?? null;
+  const selectedLecture = schedule.find((lecture) => lecture.id === selectedId) ?? defaultLecture;
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col gap-4 overflow-hidden p-3 sm:p-5 lg:p-[1.1rem]">
+    <div className="room-shell">
       <HeaderBar
-        room={room.roomId}
-        building={room.building}
-        zone={room.floor}
+        room={room}
         scheduleCount={schedule.length}
-        isScheduleOpen={isScheduleOpen}
-        onOpenSchedule={() => setIsScheduleOpen(true)}
+        scheduleOpen={scheduleOpen}
+        onOpenSchedule={() => setScheduleOpen(true)}
       />
 
-      <AppLayout>
+      {error && (
+        <div className="connection-notice" role="status">
+          <Icon name="info" />
+          <span>{error} Wyświetlam ostatnio pobrany plan.</span>
+          <button className="text-button" type="button" onClick={onRefresh}>
+            Ponów
+          </button>
+        </div>
+      )}
+
+      <main className="room-workspace">
         <LectureNavigator
           schedule={schedule}
-          currentLecture={currentLecture}
-          disabled={isScheduleOpen || selectedLecture !== null}
+          lecture={selectedLecture}
+          defaultLecture={defaultLecture}
+          disabled={scheduleOpen}
+          room={room}
+          onSelect={setSelectedId}
+          onReset={() => setSelectedId(null)}
         />
-      </AppLayout>
+      </main>
+
+      <footer className="app-footer">
+        <span>
+          <span className={`status-dot ${error ? 'status-dot--warning' : ''}`} />
+          {error ? 'Ostatnio pobrany plan' : 'Plan aktualny'}
+          <span className="footer-time"> · {formatTime(new Date(data.generatedAt))}</span>
+        </span>
+        <span>
+          Plan sali <span className="footer-divider">/</span> {room.building}
+        </span>
+      </footer>
 
       <ScheduleSidebar
         schedule={schedule}
-        isOpen={isScheduleOpen}
-        onClose={() => setIsScheduleOpen(false)}
+        date={data.date}
+        activeId={selectedLecture?.id}
+        isOpen={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
         onSelect={(lecture) => {
-          setIsScheduleOpen(false);
-          setSelectedLecture(lecture);
+          setSelectedId(lecture.id);
+          setScheduleOpen(false);
         }}
       />
-
-      <LectureDetailsModal lecture={selectedLecture} onClose={() => setSelectedLecture(null)} />
     </div>
   );
 }

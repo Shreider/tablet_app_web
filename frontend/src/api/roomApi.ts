@@ -1,6 +1,7 @@
-import type { RoomScheduleResponse, RoomsResponse, ScheduleResponse } from '../types/schedule';
+import type { RoomScheduleResponse } from '../types/schedule';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api';
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api';
 
 export class ApiError extends Error {
   status: number;
@@ -22,9 +23,12 @@ const parseJsonResponse = async <T>(response: Response): Promise<T> => {
 
   if (!response.ok) {
     const errorMessage =
-      payload && typeof payload === 'object' && 'message' in payload && typeof payload.message === 'string'
+      payload &&
+      typeof payload === 'object' &&
+      'message' in payload &&
+      typeof payload.message === 'string'
         ? payload.message
-        : 'Nie udało się pobrać danych z API.';
+        : 'Nie udało się pobrać planu zajęć.';
 
     throw new ApiError(errorMessage, response.status);
   }
@@ -32,18 +36,10 @@ const parseJsonResponse = async <T>(response: Response): Promise<T> => {
   return payload as T;
 };
 
-export const fetchRoomSchedule = async (roomId: string, signal?: AbortSignal): Promise<RoomScheduleResponse> => {
+export const fetchRoomSchedule = async (
+  roomId: string,
+  signal?: AbortSignal
+): Promise<RoomScheduleResponse> => {
   const response = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomId)}`, { signal });
   return parseJsonResponse<RoomScheduleResponse>(response);
-};
-
-export const fetchRooms = async (signal?: AbortSignal): Promise<RoomsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/rooms`, { signal });
-  return parseJsonResponse<RoomsResponse>(response);
-};
-
-export const fetchSchedule = async (date?: string, signal?: AbortSignal): Promise<ScheduleResponse> => {
-  const search = date ? `?date=${encodeURIComponent(date)}` : '';
-  const response = await fetch(`${API_BASE_URL}/schedule${search}`, { signal });
-  return parseJsonResponse<ScheduleResponse>(response);
 };

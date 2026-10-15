@@ -1,73 +1,110 @@
-import type { LectureEvent } from '../types/schedule';
+import type { LectureEvent, RoomDetails } from '../types/schedule';
+import { useNow } from '../hooks/useNow';
+import { durationOf, formatTime, toMinutes } from '../lib/schedule';
+import { Icon } from './Icon';
 
 interface CurrentLecturePanelProps {
   lecture: LectureEvent | null;
+  room: RoomDetails;
 }
 
-export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.Element {
+export function CurrentLecturePanel({ lecture, room }: CurrentLecturePanelProps): JSX.Element {
+  const now = useNow();
   if (!lecture) {
     return (
-      <section
-        className="flex min-h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel sm:p-6"
-        aria-label="Wybrane zajęcia"
-      >
-        <span className="inline-flex w-fit items-center rounded-full border border-border bg-surface/50 px-3 py-1 text-base font-semibold text-foreground">
-          Brak zajęć
+      <section className="lecture-empty">
+        <span className="state-icon">
+          <Icon name="calendar" size={30} />
         </span>
-        <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">
-          Brak zaplanowanych zajęć na dzisiaj
-        </h2>
-        <p className="m-0 text-[1.05rem] leading-relaxed text-muted">
-          Sprawdź inną salę lub wykonaj ponowny seed danych testowych.
-        </p>
+        <p className="eyebrow">Brak zajęć</p>
+        <h2>Dziś bez zaplanowanych zajęć</h2>
+        <p>Sala jest wolna. Nowe zajęcia pojawią się tutaj po zaktualizowaniu planu.</p>
       </section>
     );
   }
 
-  const statusLabel =
+  const status =
     lecture.status === 'current'
-      ? 'Trwa teraz'
+      ? 'Trwają teraz'
       : lecture.status === 'upcoming'
-        ? 'Nadchodzące zajęcia'
-        : 'Zakończone zajęcia';
+        ? 'Nadchodzące'
+        : 'Zakończone';
+  const duration = durationOf(lecture);
+  const elapsed = Math.max(
+    0,
+    Math.min(duration, toMinutes(formatTime(now)) - toMinutes(lecture.startTime))
+  );
 
   return (
-    <section
-      className="flex min-h-full flex-col rounded-panel border border-border bg-surface/90 p-5 shadow-panel motion-safe:animate-fade-in sm:p-6"
-      aria-label="Wybrane zajęcia"
-    >
-      <span className="inline-flex w-fit items-center rounded-full border border-primary/60 bg-primary/25 px-3 py-1 text-base font-semibold text-foreground">
-        {statusLabel}
-      </span>
-      <h2 className="mb-2 mt-4 text-[clamp(2rem,4.1vw,3.45rem)] font-bold leading-[1.1] text-foreground">{lecture.title}</h2>
-      <p className="m-0 text-[clamp(1.2rem,2.3vw,1.85rem)] font-bold text-[#79b1ff]">
-        {lecture.startTime} - {lecture.endTime}
-      </p>
+    <article className="lecture-card" aria-label="Wybrane zajęcia">
+      <div className="lecture-main">
+        <div className="lecture-labels">
+          <span className={`status-pill status-pill--${lecture.status}`}>
+            <span className="status-dot" />
+            {status}
+          </span>
+        </div>
+        <h2>{lecture.title}</h2>
+        <div className="lecture-time">
+          <span>{lecture.startTime}</span>
+          <span className="time-separator">—</span>
+          <span>{lecture.endTime}</span>
+          <span className="duration">{duration} min</span>
+        </div>
+        {lecture.isCurrent && (
+          <div className="lecture-progress">
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-label="Postęp zajęć"
+              aria-valuemin={0}
+              aria-valuemax={duration}
+              aria-valuenow={elapsed}
+            >
+              <span style={{ width: `${duration ? (elapsed / duration) * 100 : 0}%` }} />
+            </div>
+            <span>
+              {duration - elapsed > 0
+                ? `Do końca ${duration - elapsed} min`
+                : 'Zajęcia dobiegają końca'}
+            </span>
+          </div>
+        )}
+      </div>
 
-      <dl className="mb-5 mt-6 grid grid-cols-2 gap-4 max-[540px]:grid-cols-1">
-        <div className="rounded-card border border-border bg-surface/60 p-5">
-          <dt className="mb-1 text-sm font-bold uppercase tracking-[0.08em] text-muted">Prowadzący</dt>
-          <dd className="m-0 text-lg font-semibold text-foreground">{lecture.lecturer}</dd>
+      <dl className="lecture-facts">
+        <div>
+          <dt>Prowadzący</dt>
+          <dd>{lecture.lecturer}</dd>
         </div>
-        <div className="rounded-card border border-border bg-surface/60 p-5">
-          <dt className="mb-1 text-sm font-bold uppercase tracking-[0.08em] text-muted">Sala</dt>
-          <dd className="m-0 text-lg font-semibold text-foreground">{lecture.room}</dd>
+        <div>
+          <dt>Sala</dt>
+          <dd>
+            {room.roomId}
+            <span>
+              {room.building} · {room.floor}
+            </span>
+          </dd>
         </div>
-        <div className="rounded-card border border-border bg-surface/60 p-5">
-          <dt className="mb-1 text-sm font-bold uppercase tracking-[0.08em] text-muted">Grupa</dt>
-          <dd className="m-0 text-lg font-semibold text-foreground">{lecture.group}</dd>
+        <div>
+          <dt>Grupa</dt>
+          <dd>
+            {lecture.group}
+            {lecture.fieldOfStudy && <span>{lecture.fieldOfStudy}</span>}
+          </dd>
         </div>
-        <div className="rounded-card border border-border bg-surface/60 p-5">
-          <dt className="mb-1 text-sm font-bold uppercase tracking-[0.08em] text-muted">Typ zajęć</dt>
-          <dd className="m-0 text-lg font-semibold text-foreground">{lecture.type}</dd>
+        <div>
+          <dt>Typ zajęć</dt>
+          <dd>{lecture.type}</dd>
         </div>
       </dl>
 
-      <div>
-        <h3 className="m-0 text-[1rem] font-semibold uppercase tracking-[0.08em] text-muted">Opis</h3>
-        <p className="mt-2 text-[1.05rem] leading-relaxed text-muted">{lecture.description}</p>
-        {lecture.note ? <p className="mt-2 text-[1.05rem] font-semibold text-foreground">Notatka: {lecture.note}</p> : null}
-      </div>
-    </section>
+      {lecture.description && (
+        <section className="lecture-description">
+          <h3>Opis zajęć</h3>
+          <p>{lecture.description}</p>
+        </section>
+      )}
+    </article>
   );
 }

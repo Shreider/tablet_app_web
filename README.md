@@ -111,3 +111,22 @@ Domyślne zmienne w `docker-compose.yml`:
 - `APP_TIMEZONE`,
 - `CORS_ORIGIN`,
 - `VITE_PUBLIC_APP_BASE_URL` (w usłudze `admin`, link do aplikacji użytkowej).
+
+## Przypisanie stanowiska do sali
+
+Ekran sali nie udostępnia wyboru ani zmiany sali. Dla osobnej instancji stanowiska
+skopiuj `.env.example` do `.env` i ustaw `TABLET_ROOM_ID`, np. `205`. Następnie uruchom:
+
+```bash
+docker compose up -d --build frontend
+```
+
+Adres `/` otworzy domyślną salę z konfiguracji. Adres `/room/:roomId` zawsze
+otwiera salę podaną w URL, niezależnie od `TABLET_ROOM_ID`. Na przykład
+`/room/30` otworzy salę 30 nawet wtedy, gdy domyślna sala to 205. Przy uruchomieniu
+frontendu bez Dockera domyślną salę ustawia zmienna `VITE_ROOM_ID`.
+
+Przy wspólnym serwerze dla wielu tabletów pozostaw `TABLET_ROOM_ID` puste i ustaw
+na każdym tablecie jego stały adres startowy, np. `/room/30` lub `/room/205`.
+Aplikacja nie wyświetla przełącznika sal; sam adres `/` bez przypisania pokazuje
+informację o braku konfiguracji.

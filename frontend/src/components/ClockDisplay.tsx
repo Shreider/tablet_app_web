@@ -1,37 +1,20 @@
-import { useEffect, useState } from 'react';
-
-const formatDate = (date: Date): string =>
-  date.toLocaleDateString('pl-PL', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-
-const formatTime = (date: Date): string =>
-  date.toLocaleTimeString('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
+import { useNow } from '../hooks/useNow';
+import { formatTime, timeZone } from '../lib/schedule';
 
 export function ClockDisplay(): JSX.Element {
-  const [now, setNow] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const timerId = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => {
-      window.clearInterval(timerId);
-    };
-  }, []);
-
+  const now = useNow();
   return (
-    <div className="flex flex-col gap-1 text-left md:text-right" aria-label="Aktualny czas i data">
-      <span className="text-[clamp(1.45rem,2.1vw,2rem)] font-bold text-foreground">{formatTime(now)}</span>
-      <span className="text-sm capitalize text-muted">{formatDate(now)}</span>
+    <div className="clock" aria-label="Aktualny czas i data">
+      <time dateTime={now.toISOString()}>{formatTime(now)}</time>
+      <span>
+        {now.toLocaleDateString('pl-PL', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone
+        })}
+      </span>
     </div>
   );
 }

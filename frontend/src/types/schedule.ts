@@ -32,21 +32,3 @@ export interface RoomScheduleResponse {
   nextLecture: LectureEvent | null;
   schedule: LectureEvent[];
 }
-
-export interface RoomsResponse {
-  generatedAt: string;
-  total: number;
-  rooms: RoomDetails[];
-}
-
-export interface ScheduleEventRow {
-  room: RoomDetails;
-  lecture: LectureEvent;
-}
-
-export interface ScheduleResponse {
-  date: string;
-  generatedAt: string;
-  total: number;
-  events: ScheduleEventRow[];
-}
