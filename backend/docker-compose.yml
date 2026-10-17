@@ -1,0 +1,55 @@
+name: tablet_app_backend
+
+services:
+  backend:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://web_app:web_app_password@database:5432/tablet_schedule
+      DATABASE_ADMIN_URL: postgresql://admin:admin_password@database:5432/tablet_schedule
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-change-me-admin-token}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Warsaw}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - api_net
+      - data_net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tablet_schedule
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - data_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d tablet_schedule"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres-data:
+
+networks:
+  api_net:
+  data_net:
+    internal: true

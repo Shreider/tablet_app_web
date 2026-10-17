@@ -584,7 +584,7 @@ export function AdminRoomsPage(): JSX.Element {
           <div className="space-y-3">
             <a
               className="admin-btn admin-btn-secondary"
-              href={`${(import.meta.env.VITE_PUBLIC_APP_BASE_URL || 'http://localhost:5173').replace(/\/$/, '')}/room/${encodeURIComponent(detailsState.room.roomCode)}`}
+              href={`${(import.meta.env.VITE_PUBLIC_APP_BASE_URL || window.location.origin).replace(/\/$/, '')}/room/${encodeURIComponent(detailsState.room.roomCode)}`}
               target="_blank"
               rel="noreferrer"
             >

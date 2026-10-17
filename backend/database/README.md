@@ -5,10 +5,10 @@ Baza danych jest głównym źródłem prawdy dla aplikacji.
 ## Prisma
 
 Schemat i migracje są utrzymywane przez Prisma:
-- schema: `backend/prisma/schema.prisma`
-- migracje: `backend/prisma/migrations/*`
+- schema: `prisma/schema.prisma` (względem katalogu backendu)
+- migracje: `prisma/migrations/*`
 
-Migracje uruchamiane są poleceniem:
+Polecenia wykonuj z katalogu `backend/`. Migracje uruchamiane są poleceniem:
 
 ```bash
 docker compose exec -T backend npm run db:migrate

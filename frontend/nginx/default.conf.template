@@ -1,0 +1,52 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # DNS Dockera pozwala uruchomić frontend przed backendem i zmienić IP API.
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    set $backend_url "${BACKEND_URL}";
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location = /api {
+        proxy_pass $backend_url$request_uri;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_server_name on;
+    }
+
+    location ^~ /api/ {
+        proxy_pass $backend_url$request_uri;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_server_name on;
+    }
+
+    location = /admin {
+        return 301 /admin/;
+    }
+
+    location /admin/ {
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location ~* \.(?:js|css|png|jpg|jpeg|svg|ico|woff2?)$ {
+        try_files $uri =404;
+    }
+
+    location ~ /index\.html$ {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

@@ -71,7 +71,7 @@ export function AdminLayout(): JSX.Element {
   const pageTitle = resolvePageTitle(location.pathname);
   const context = resolveNavContext(location.pathname);
   const publicAppBaseUrl = (
-    import.meta.env.VITE_PUBLIC_APP_BASE_URL || 'http://localhost:5173'
+    import.meta.env.VITE_PUBLIC_APP_BASE_URL || window.location.origin
   ).replace(/\/$/, '');
 
   useEffect(() => {

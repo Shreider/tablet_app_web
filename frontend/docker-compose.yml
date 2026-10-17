@@ -1,0 +1,19 @@
+name: tablet_app_frontend
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        TABLET_ROOM_ID: ${TABLET_ROOM_ID:-}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    environment:
+      BACKEND_URL: ${BACKEND_URL:?Ustaw BACKEND_URL w pliku frontend/.env na adres serwera API}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

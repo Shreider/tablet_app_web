@@ -1,132 +1,161 @@
 # Room Tablet Preview
 
-Aplikacja webowa w architekturze:
-- `frontend` (React + Vite + Tailwind, aplikacja użytkowa),
-- `admin` (React + Vite + Tailwind, osobny panel administracyjny),
-- `backend` (Node.js + Express + TypeScript),
-- `database` (PostgreSQL),
-- `Prisma` (schema, migracje, Prisma Client).
+Projekt jest podzielony na dwie niezależnie wdrażane aplikacje:
 
-## Model danych i Prisma
+- `frontend/` — widok sal i panel administratora, budowane do plików statycznych
+  i udostępniane przez jeden serwer Nginx;
+- `backend/` — API Node.js / Express, Prisma i PostgreSQL.
 
-Model bazy jest utrzymywany przez Prisma:
-- schema: `backend/prisma/schema.prisma`,
-- migracje: `backend/prisma/migrations/*`,
-- klient: `@prisma/client`.
+Każdy katalog ma własny `Dockerfile`, `docker-compose.yml`, `.env.example`
+i instrukcję uruchomienia. Na serwer wystarczy skopiować tylko właściwy katalog,
+bez `node_modules`, `dist` i lokalnych plików `.env`.
 
-Główne encje:
-- `Room` (`rooms`),
-- `ScheduleEntry` (`schedule_entries`) z relacją `Room 1:N ScheduleEntry`.
+## Dwa osobne serwery
 
-## Endpointy API
+Przykład: serwer frontendu `192.168.1.10`, serwer backendu `192.168.1.20`.
+Oba wymagają Dockera i Docker Compose.
 
-Wszystkie endpointy backendu są pod `/api`.
+### Serwer backendu
 
-Publiczne:
-- `GET /api/health`
-- `GET /api/rooms`
-- `GET /api/room/:roomId`
-- `GET /api/schedule`
-- `GET /api/schedule?roomId=<id>`
-- `GET /api/schedule?date=YYYY-MM-DD`
-
-Admin (`/api/admin/*`):
-- `POST /api/admin/auth/login`
-- `GET /api/admin/auth/session`
-- `GET /api/admin/dashboard`
-- `GET /api/admin/rooms`
-- `GET /api/admin/rooms/options`
-- `GET /api/admin/rooms/:id`
-- `POST /api/admin/rooms`
-- `PUT /api/admin/rooms/:id`
-- `DELETE /api/admin/rooms/:id`
-- `GET /api/admin/schedule-entries`
-- `GET /api/admin/schedule-entries/options`
-- `GET /api/admin/schedule-entries/:id`
-- `POST /api/admin/schedule-entries`
-- `PUT /api/admin/schedule-entries/:id`
-- `DELETE /api/admin/schedule-entries/:id`
-
-## Routing i porty
-
-- Frontend użytkowy: `http://localhost:5173`
-- Panel admina: `http://localhost:5174`
-- Backend API: `http://localhost:3001`
-- Database: brak publikacji portu na hosta (dostęp tylko z backendu w sieci Dockera)
-- Widok sali (frontend): `/room/:roomId`
-- Admin app (osobna aplikacja): `/login`, `/dashboard`, `/rooms`, `/schedule-entries`
-
-## Separacja sieciowa
-
-`docker-compose` używa dwóch sieci:
-- `public_net`: `frontend`, `admin`, `backend`
-- `data_net` (`internal: true`): `backend`, `database`
-
-Dzięki temu tylko `backend` ma dostęp do `database`.
-
-## Autoryzacja admina
-
-Panel admina (aplikacja na porcie 5174) i endpointy `/api/admin` są zabezpieczone tokenem:
-- nagłówek: `Authorization: Bearer <ADMIN_TOKEN>`
-- token konfigurowany przez `ADMIN_TOKEN` w backendzie.
-
-## Uruchomienie
-
-Wymagania:
-- Docker
-- Docker Compose
-
-Start:
+Skopiuj na niego katalog `backend`, a następnie w tym katalogu:
 
 ```bash
-docker compose up -d --build
+cp .env.example .env
 ```
 
-Przy pierwszym uruchomieniu:
-- backend uruchamia migracje Prisma (`npm run db:migrate`),
-- opcjonalny seed:
+Ustaw w `.env` własny `ADMIN_TOKEN` i adres strony:
+
+```dotenv
+BACKEND_PORT=3001
+ADMIN_TOKEN=wstaw-wlasny-dlugi-token
+APP_TIMEZONE=Europe/Warsaw
+CORS_ORIGIN=http://192.168.1.10:5173
+```
+
+Uruchom API i bazę:
+
+```bash
+docker compose up -d --build --wait
+```
+
+Migracje wykonują się automatycznie. Na nowej bazie można opcjonalnie utworzyć
+dane demonstracyjne:
 
 ```bash
 docker compose exec -T backend npm run db:seed
 ```
 
-Stop:
+Seed usuwa istniejące dane i odtwarza zestaw demonstracyjny.
+
+### Serwer frontendu
+
+Skopiuj na niego katalog `frontend`, a następnie w tym katalogu:
 
 ```bash
-docker compose down
+cp .env.example .env
 ```
 
-Reset wolumenu DB:
+Ustaw adres serwera backendu osiągalny **z serwera frontendu**:
+
+```dotenv
+BACKEND_URL=http://192.168.1.20:3001
+FRONTEND_PORT=5173
+TABLET_ROOM_ID=205
+```
+
+`BACKEND_URL` musi zawierać `http://` lub `https://`, bez końcowego `/`
+i bez `/api`. Nie wpisuj `localhost`, jeśli backend działa na innej maszynie.
 
 ```bash
-docker compose down -v
+docker compose up -d --build --wait
 ```
 
-## Konfiguracja środowiska
+Adresy w przeglądarce:
 
-Domyślne zmienne w `docker-compose.yml`:
-- `DATABASE_URL` (runtime read-only: `web_app`),
-- `DATABASE_ADMIN_URL` (operacje administracyjne / migracje),
-- `ADMIN_TOKEN`,
-- `APP_TIMEZONE`,
-- `CORS_ORIGIN`,
-- `VITE_PUBLIC_APP_BASE_URL` (w usłudze `admin`, link do aplikacji użytkowej).
+- widok domyślnej sali: `http://192.168.1.10:5173/`;
+- konkretna sala: `http://192.168.1.10:5173/room/205`;
+- panel administratora: `http://192.168.1.10:5173/admin/`.
 
-## Przypisanie stanowiska do sali
+Panel działa na tym samym porcie co widok sal; dawny port `5174` nie jest
+potrzebny przy wdrożeniu. Logowanie używa `ADMIN_TOKEN` ustawionego w backendzie.
 
-Ekran sali nie udostępnia wyboru ani zmiany sali. Dla osobnej instancji stanowiska
-skopiuj `.env.example` do `.env` i ustaw `TABLET_ROOM_ID`, np. `205`. Następnie uruchom:
+## Komunikacja między aplikacjami
+
+Przeglądarka łączy się z frontendem. Nginx przekazuje żądania `/api` do
+`BACKEND_URL`, zachowując ścieżkę, parametry i nagłówek autoryzacji.
+Adres backendu nie jest wbudowany w kod JavaScript.
+
+Serwer frontendu musi mieć dostęp do portu API backendu (domyślnie `3001`).
+PostgreSQL nie publikuje portu na hosta i działa w prywatnej sieci backendu.
+Frontend może uruchomić się także wtedy, gdy API jest chwilowo niedostępne.
+
+Po zmianie adresu backendu wystarczy odtworzyć kontener frontendu:
+
+```bash
+docker compose up -d --force-recreate frontend
+```
+
+`TABLET_ROOM_ID` jest ustawiany podczas budowania obrazu. Po jego zmianie użyj:
 
 ```bash
 docker compose up -d --build frontend
 ```
 
-Adres `/` otworzy domyślną salę z konfiguracji. Adres `/room/:roomId` zawsze
-otwiera salę podaną w URL, niezależnie od `TABLET_ROOM_ID`. Na przykład
-`/room/30` otworzy salę 30 nawet wtedy, gdy domyślna sala to 205. Przy uruchomieniu
-frontendu bez Dockera domyślną salę ustawia zmienna `VITE_ROOM_ID`.
+Numer w `/room/:roomId` ma pierwszeństwo przed domyślną salą. Dla jednego serwera
+obsługującego wiele tabletów pozostaw `TABLET_ROOM_ID` puste i przypisz każdemu
+tabletowi stały adres, np. `/room/30` lub `/room/205`. Sam `/` bez domyślnej sali
+wyświetla informację o braku konfiguracji.
 
-Przy wspólnym serwerze dla wielu tabletów pozostaw `TABLET_ROOM_ID` puste i ustaw
-na każdym tablecie jego stały adres startowy, np. `/room/30` lub `/room/205`.
-Aplikacja nie wyświetla przełącznika sal; sam adres `/` bez przypisania pokazuje
-informację o braku konfiguracji.
+## Uruchomienie lokalne całego projektu
+
+Główny plik Compose pozostaje dostępny do pracy na jednym komputerze:
+
+```bash
+docker compose up -d --build --wait --remove-orphans
+```
+
+- widok sal: `http://localhost:5173`;
+- panel: `http://localhost:5173/admin/`;
+- API: `http://localhost:3001/api/health`.
+
+Opcja `--remove-orphans` usuwa kontener dawnego osobnego panelu admina.
+Istniejący wolumen `tablet_app_web_postgres-data` jest zachowany, gdy uruchamiasz
+projekt pod dotychczasową nazwą `tablet_app_web`. Zatrzymanie aplikacji:
+
+```bash
+docker compose down
+```
+
+## Przeniesienie dotychczasowej bazy na drugi serwer
+
+Osobny backend używa własnego wolumenu `tablet_app_backend_postgres-data`.
+Przed przeniesieniem wykonaj kopię istniejącej bazy z głównego katalogu projektu:
+
+```bash
+docker compose exec -T database pg_dump -U admin -d tablet_schedule -Fc > tablet_schedule.dump
+```
+
+Przenieś plik na serwer backendu. Po pierwszym uruchomieniu bazy zatrzymaj API,
+odtwórz kopię i uruchom API ponownie, aby wykonało ewentualne nowe migracje:
+
+```bash
+docker compose stop backend
+docker compose exec -T database pg_restore -U admin -d tablet_schedule --clean --if-exists --exit-on-error < tablet_schedule.dump
+docker compose up -d backend
+```
+
+Nie uruchamiaj seeda po odtworzeniu kopii.
+
+## API i model danych
+
+Publiczne endpointy: `GET /api/health`, `GET /api/rooms`,
+`GET /api/room/:roomId` oraz `GET /api/schedule` (filtry `roomId` i `date`).
+Panel korzysta z `/api/admin/*`: logowania, sesji, sal, harmonogramu,
+słowników, konfliktów i dashboardu. Autoryzacja: `Authorization: Bearer <ADMIN_TOKEN>`.
+
+Schemat jest w `backend/prisma/schema.prisma`, a migracje w
+`backend/prisma/migrations/`. Publiczne API używa konta bazy `web_app` do odczytu;
+migracje i operacje panelu administracyjnego używają konta `admin`.
+
+Szczegóły: [frontend](frontend/README.md), [backend](backend/README.md),
+[baza danych](backend/database/README.md).

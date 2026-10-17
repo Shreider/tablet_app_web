@@ -1,12 +1,29 @@
-FROM node:20-alpine
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+COPY admin/package*.json ./admin/
+RUN npm ci --prefix admin
 
 COPY . .
 
-EXPOSE 5173
+ARG TABLET_ROOM_ID=
+ENV VITE_ROOM_ID=${TABLET_ROOM_ID}
+ENV VITE_API_BASE_URL=/api
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+RUN npm run build && npm run build --prefix admin
+
+FROM nginx:stable-alpine
+
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/admin/dist /usr/share/nginx/html/admin
+
+ENV NGINX_ENVSUBST_FILTER=BACKEND_URL
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
