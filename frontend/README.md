@@ -6,6 +6,8 @@ Jeden obraz Dockera buduje oba interfejsy i uruchamia je na Nginx.
 
 ## Uruchomienie na serwerze frontendu
 
+Wymagane: Docker z Buildx/BuildKit i Docker Compose.
+
 ```bash
 cp .env.example .env
 ```
@@ -16,6 +18,11 @@ W `.env` ustaw `BACKEND_URL` na adres API osiągalny z tego serwera, np.
 ```bash
 docker compose up -d --build --wait
 ```
+
+Cały katalog można skopiować na serwer bez katalogu `backend/` i bez plików
+z korzenia repozytorium. Build instaluje zależności przez `npm ci` dla obu
+interfejsów. Pliki `node_modules`, `dist`, `.env` i katalogi `.git` z hosta
+są wykluczone przez `.dockerignore`.
 
 - `/` — domyślna sala z `TABLET_ROOM_ID`;
 - `/room/205` — konkretna sala;
@@ -48,8 +55,8 @@ obrazu. Poprzednie żądanie jest anulowane, a plan pobierany od nowa z wybraneg
 po ponownym otwarciu strony. Przy zablokowanej pamięci przeglądarki działa do
 przeładowania strony. Zmiany są synchronizowane między otwartymi kartami.
 
-Przycisk **Przywróć domyślne** wraca do `/api/room/{roomId}` (lub adresu
-wynikającego z `VITE_API_BASE_URL`). Ustawienia są dostępne również podczas
+Przycisk **Przywróć domyślne** wraca do `/api/room/{roomId}` i serwera wskazanego
+przez `BACKEND_URL`. Ustawienia są dostępne również podczas
 ładowania i po błędzie połączenia, aby można było poprawić niedziałający adres.
 
 Własny adres innego serwera jest wywoływany bezpośrednio z przeglądarki.
@@ -57,8 +64,12 @@ Backend musi dopuszczać adres frontendu w `CORS_ORIGIN`. Przy stronie działaj�
 przez HTTPS własny endpoint również musi używać HTTPS. Domyślna ścieżka `/api`
 nadal korzysta z proxy serwera frontendu.
 
-Konfiguracja Nginx: `nginx/default.conf.template`. Połączenie z API odbywa się
-po stronie serwera; przeglądarka używa `/api` we własnej domenie.
+Konfiguracja Nginx: `nginx/default.conf.template`. Przy starcie kontenera
+oficjalny entrypoint Nginx podstawia `BACKEND_URL` do tej konfiguracji. Adres
+jest sprawdzany przed uruchomieniem serwera: dozwolone są `http://` i `https://`,
+nazwa lub IP serwera oraz opcjonalny port. Wartość nie może zawierać ścieżki.
+Zmiana `BACKEND_URL` nie zmienia zbudowanych plików JavaScript. Widok sal
+i panel administratora domyślnie wysyłają żądania do względnego `/api`.
 
 ## Pobieranie i wyświetlanie danych sali
 
@@ -84,7 +95,7 @@ Wymagany Node.js 22. Widok sal:
 
 ```bash
 npm ci
-VITE_PROXY_TARGET=http://192.168.1.20:3001 VITE_ROOM_ID=205 npm run dev
+BACKEND_URL=http://192.168.1.20:3001 VITE_ROOM_ID=205 npm run dev
 ```
 
 Panel, w drugim terminalu:
@@ -92,12 +103,15 @@ Panel, w drugim terminalu:
 ```bash
 cd admin
 npm ci
-VITE_PROXY_TARGET=http://192.168.1.20:3001 VITE_PUBLIC_APP_BASE_URL=http://localhost:5173 npm run dev
+BACKEND_URL=http://192.168.1.20:3001 VITE_PUBLIC_APP_BASE_URL=http://localhost:5173 npm run dev
 ```
 
 Tryb deweloperski: widok sal na `http://localhost:5173`, panel na
 `http://localhost:5174/admin/`. Dwa serwery Vite służą wyłącznie do pracy nad
 kodem; wdrożony frontend ma jeden serwer i jeden port.
+`BACKEND_URL` w tym trybie ustawia proxy procesu Vite podczas jego startu;
+nie trafia do kodu przeglądarki. `VITE_PROXY_TARGET` pozostaje obsługiwany jako
+zastępcze ustawienie proxy. `VITE_API_BASE_URL` nie jest już używane.
 
 Kompilacja:
 

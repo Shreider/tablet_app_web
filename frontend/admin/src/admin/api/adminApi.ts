@@ -11,8 +11,7 @@ import type {
   PaginatedResponse
 } from '../types';
 
-const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api';
+const API_BASE_URL = '/api';
 
 export class AdminApiError extends Error {
   status: number;

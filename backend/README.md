@@ -5,6 +5,8 @@ z `frontend/`. Zawiera API Express / TypeScript, Prisma i konfigurację PostgreS
 
 ## Uruchomienie na serwerze backendu
 
+Wymagane: Docker z Buildx/BuildKit i Docker Compose.
+
 ```bash
 cp .env.example .env
 ```
@@ -15,6 +17,12 @@ Ustaw w `.env` własny `ADMIN_TOKEN`, adres frontendu w `CORS_ORIGIN`
 ```bash
 docker compose up -d --build --wait
 ```
+
+Katalog działa samodzielnie po skopiowaniu na serwer. Compose buduje API
+z bieżącego katalogu, uruchamia PostgreSQL i montuje skrypty inicjalizacyjne
+z `database/init/`. Docker instaluje zależności przez `npm ci` i generuje klienta
+Prisma z dołączonego schematu. `node_modules`, `dist`, `.env` i `.git` z hosta
+są wykluczone z obrazu.
 
 API jest dostępne na porcie `3001` (lub `BACKEND_PORT`), pod `/api`.
 Przykładowe sprawdzenie: `http://ADRES_BACKENDU:3001/api/health`.
@@ -80,6 +88,32 @@ z kodem `INVALID_DATE`. Odpowiedzi mają format JSON i nagłówek
 PostgreSQL jest dostępny tylko dla backendu w prywatnej sieci Dockera.
 Dane są przechowywane w wolumenie `tablet_app_backend_postgres-data`.
 Konta bazy i ich dotychczasowe hasła pozostają takie jak przed podziałem projektu.
+
+## Zachowanie istniejących danych
+
+Domyślny wolumen tego pakietu to `tablet_app_backend_postgres-data`. Główny
+Compose zachowuje dotychczasowy `tablet_app_web_postgres-data`.
+Jeśli przenosisz uruchomienie ze wspólnego Compose na sam backend **na tym samym
+serwerze**, zatrzymaj poprzednie API i PostgreSQL, a w `.env` backendu ustaw:
+
+```dotenv
+POSTGRES_VOLUME=tablet_app_web_postgres-data
+POSTGRES_VOLUME_EXTERNAL=true
+```
+
+Następnie uruchom `docker compose up -d --build --wait` z katalogu backendu.
+PostgreSQL użyje istniejącego wolumenu, a migracje Prisma nie odtworzą danych.
+`POSTGRES_VOLUME_EXTERNAL=true` wymaga istnienia wskazanego wolumenu; błędna
+nazwa zatrzyma wdrożenie zamiast utworzyć pustą bazę. Nie uruchamiaj równocześnie
+dwóch instancji PostgreSQL na tym samym wolumenie.
+
+Jeżeli korzystasz z własnej nazwy projektu Compose, sprawdź rzeczywistą nazwę
+wolumenu przez `docker volume ls` i wpisz ją jako `POSTGRES_VOLUME`.
+Przy zmianie serwera przenieś dane przez kopię `pg_dump` / `pg_restore`;
+szczegółowe polecenia znajdują się w głównym README.
+
+`docker compose down` zachowuje dane. Nie używaj `down -v` do zwykłego
+zatrzymania aplikacji. Seed jest opcjonalny i nie wykonuje się automatycznie.
 
 Migracje Prisma wykonują się automatycznie podczas startu backendu. Opcjonalny
 seed dla nowej bazy:

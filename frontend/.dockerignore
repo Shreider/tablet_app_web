@@ -4,3 +4,5 @@
 **/.env.*
 !**/.env.example
 npm-debug.log
+.git
+.DS_Store

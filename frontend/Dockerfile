@@ -12,12 +12,12 @@ COPY . .
 
 ARG TABLET_ROOM_ID=
 ENV VITE_ROOM_ID=${TABLET_ROOM_ID}
-ENV VITE_API_BASE_URL=/api
 
 RUN npm run build && npm run build --prefix admin
 
 FROM nginx:stable-alpine
 
+COPY --chmod=755 docker-entrypoint.d/19-validate-backend-url.sh /docker-entrypoint.d/19-validate-backend-url.sh
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY --from=build /app/admin/dist /usr/share/nginx/html/admin

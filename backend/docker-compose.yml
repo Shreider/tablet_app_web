@@ -48,6 +48,8 @@ services:
 
 volumes:
   postgres-data:
+    name: ${POSTGRES_VOLUME:-${COMPOSE_PROJECT_NAME}_postgres-data}
+    external: ${POSTGRES_VOLUME_EXTERNAL:-false}
 
 networks:
   api_net:

@@ -1,5 +1,7 @@
 # Tryb lokalny: obie aplikacje na jednym komputerze.
 # Na dwóch serwerach używaj plików Compose we frontend/ i backend/.
+name: tablet_app_web
+
 services:
   frontend:
     container_name: room-tablet-frontend
@@ -70,6 +72,8 @@ services:
 
 volumes:
   postgres-data:
+    name: ${POSTGRES_VOLUME:-${COMPOSE_PROJECT_NAME}_postgres-data}
+    external: ${POSTGRES_VOLUME_EXTERNAL:-false}
 
 networks:
   public_net:

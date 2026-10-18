@@ -1,8 +1,5 @@
 const STORAGE_KEY = 'room_tablet_api_endpoint';
-const apiBaseUrl =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') || '/api';
-
-export const defaultApiEndpoint = `${apiBaseUrl}/room/{roomId}`;
+export const defaultApiEndpoint = '/api/room/{roomId}';
 
 export function validateApiEndpoint(input: string): string {
   const value = input.trim();

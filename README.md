@@ -13,7 +13,7 @@ bez `node_modules`, `dist` i lokalnych plików `.env`.
 ## Dwa osobne serwery
 
 Przykład: serwer frontendu `192.168.1.10`, serwer backendu `192.168.1.20`.
-Oba wymagają Dockera i Docker Compose.
+Oba wymagają Dockera z Buildx/BuildKit oraz Docker Compose.
 
 ### Serwer backendu
 
@@ -120,7 +120,10 @@ docker compose up -d --build --wait --remove-orphans
 
 Opcja `--remove-orphans` usuwa kontener dawnego osobnego panelu admina.
 Istniejący wolumen `tablet_app_web_postgres-data` jest zachowany, gdy uruchamiasz
-projekt pod dotychczasową nazwą `tablet_app_web`. Zatrzymanie aplikacji:
+projekt pod dotychczasową nazwą `tablet_app_web`, ustawioną teraz jawnie w Compose.
+Nadal można użyć własnej nazwy projektu przez `docker compose -p NAZWA`.
+Zmienne `POSTGRES_VOLUME` i `POSTGRES_VOLUME_EXTERNAL=true` pozwalają wskazać
+istniejący wolumen niezależnie od nazwy projektu. Zatrzymanie aplikacji:
 
 ```bash
 docker compose down
@@ -129,6 +132,11 @@ docker compose down
 ## Przeniesienie dotychczasowej bazy na drugi serwer
 
 Osobny backend używa własnego wolumenu `tablet_app_backend_postgres-data`.
+Na tym samym serwerze można użyć dotychczasowego wolumenu bez kopiowania danych:
+zatrzymaj poprzednie API i PostgreSQL, a w `.env` backendu ustaw
+`POSTGRES_VOLUME=tablet_app_web_postgres-data` oraz `POSTGRES_VOLUME_EXTERNAL=true`.
+Potem uruchom Compose z samego katalogu `backend/`.
+
 Przed przeniesieniem wykonaj kopię istniejącej bazy z głównego katalogu projektu:
 
 ```bash
