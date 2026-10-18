@@ -1,6 +1,6 @@
 import type { LectureEvent, RoomDetails } from '../types/schedule';
 import { useNow } from '../hooks/useNow';
-import { durationOf, formatTime, toMinutes } from '../lib/schedule';
+import { durationOf, formatDay, formatTime, toMinutes } from '../lib/schedule';
 import { Icon } from './Icon';
 
 interface CurrentLecturePanelProps {
@@ -73,6 +73,17 @@ export function CurrentLecturePanel({ lecture, room }: CurrentLecturePanelProps)
       </div>
 
       <dl className="lecture-facts">
+        <div>
+          <dt>Przedmiot</dt>
+          <dd>
+            {lecture.subject || lecture.title}
+            {lecture.subjectCode && <span>{lecture.subjectCode}</span>}
+          </dd>
+        </div>
+        <div>
+          <dt>Data</dt>
+          <dd><time dateTime={lecture.date}>{formatDay(lecture.date)}</time></dd>
+        </div>
         <div>
           <dt>Prowadzący</dt>
           <dd>{lecture.lecturer}</dd>

@@ -31,6 +31,24 @@ Token administratora i dane dostępowe do bazy są konfigurowane w backendzie.
 Konfiguracja Nginx: `nginx/default.conf.template`. Połączenie z API odbywa się
 po stronie serwera; przeglądarka używa `/api` we własnej domenie.
 
+## Pobieranie i wyświetlanie danych sali
+
+Otwarcie `/room/205` powoduje wysłanie `GET /api/room/205` z nagłówkiem
+`Accept: application/json`. Nginx przekazuje żądanie do `BACKEND_URL`, np.
+`http://192.168.1.20:3001/api/room/205`. W trybie deweloperskim robi to proxy Vite.
+
+Frontend odczytuje JSON: `room` zawiera metadane sali, `date` datę planu,
+`schedule` listę zajęć, a `currentLecture` i `nextLecture` wskazują zajęcia
+trwające i nadchodzące. Wyświetla numer sali, budynek, piętro, przedmiot i jego
+kod, datę, godziny, prowadzącego, grupę oraz opis.
+
+Kod pobierania: `src/api/roomApi.ts`; obsługa odświeżania i błędów:
+`src/hooks/useRoomSchedule.ts`. Dane są sprawdzane przed wyświetleniem.
+Niepoprawny JSON lub brak wymaganych pól powoduje pokazanie komunikatu błędu.
+Odczyt powtarza się co 60 sekund, gdy strona jest widoczna, oraz po powrocie
+do karty lub odzyskaniu połączenia. Po nieudanym odświeżeniu ostatnio pobrany
+plan pozostaje na ekranie z informacją o błędzie.
+
 ## Praca nad kodem bez Dockera
 
 Wymagany Node.js 22. Widok sal:

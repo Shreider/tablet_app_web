@@ -10,8 +10,13 @@ const toMinutes = (timeValue: string | Date): number => {
 export const resolveStatus = (
   startTime: string | Date,
   endTime: string | Date,
-  nowMinutes: number
+  nowMinutes: number,
+  eventDate: string,
+  today: string
 ): 'current' | 'upcoming' | 'finished' => {
+  if (eventDate < today) return 'finished';
+  if (eventDate > today) return 'upcoming';
+
   const startMinutes = toMinutes(startTime);
   const endMinutes = toMinutes(endTime);
 
@@ -43,16 +48,18 @@ export const mapRoomMetadata = (roomRow: RoomMetadataSource) => ({
 export const mapEntryToLectureEvent = (
   entry: ScheduleEntryRow,
   roomCode: string,
-  nowMinutes: number
+  nowMinutes: number,
+  today: string
 ) => {
   const startTime = toTimeString(entry.start_time);
   const endTime = toTimeString(entry.end_time);
-  const status = resolveStatus(startTime, endTime, nowMinutes);
+  const status = resolveStatus(startTime, endTime, nowMinutes, entry.event_date, today);
 
   return {
     id: `lec-${entry.id}`,
     title: entry.title,
     room: roomCode,
+    date: entry.event_date,
     lecturer: entry.lecturer_name,
     group: entry.group_name,
     type: entry.class_type_name,

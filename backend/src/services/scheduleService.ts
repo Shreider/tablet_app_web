@@ -37,13 +37,13 @@ export const resolveDateFilter = (dateQuery: string | null): string => {
 
 export const getSchedule = async (dateQuery: string | null = null) => {
   const dateIso = resolveDateFilter(dateQuery);
-  const { minutes } = getDateAndMinutesInTimezone(env.timezone);
+  const { dateIso: todayInTimezone, minutes } = getDateAndMinutesInTimezone(env.timezone);
 
   const rows = await findScheduleForDate(dateIso);
 
   const events = rows.map((row) => ({
     room: mapRoomMetadata(row),
-    lecture: mapEntryToLectureEvent(row, row.room_code, minutes)
+    lecture: mapEntryToLectureEvent(row, row.room_code, minutes, todayInTimezone)
   }));
 
   return {

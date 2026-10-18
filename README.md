@@ -150,6 +150,8 @@ Nie uruchamiaj seeda po odtworzeniu kopii.
 
 Publiczne endpointy: `GET /api/health`, `GET /api/rooms`,
 `GET /api/room/:roomId` oraz `GET /api/schedule` (filtry `roomId` i `date`).
+Endpoint sali obsługuje również `?date=YYYY-MM-DD`; bez tego parametru zwraca
+dzisiejszy plan. Kontrakt JSON i przykłady opisano w [README backendu](backend/README.md#dane-sali-w-json).
 Panel korzysta z `/api/admin/*`: logowania, sesji, sal, harmonogramu,
 słowników, konfliktów i dashboardu. Autoryzacja: `Authorization: Bearer <ADMIN_TOKEN>`.
 

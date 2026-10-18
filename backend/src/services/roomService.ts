@@ -21,7 +21,9 @@ export const getRoomSchedule = async (
   const { dateIso: todayInTimezone, minutes } = getDateAndMinutesInTimezone(env.timezone);
   const dateIso = explicitDate ?? todayInTimezone;
   const entries = await findRoomScheduleForDate(room.id, dateIso);
-  const schedule = entries.map((entry) => mapEntryToLectureEvent(entry, room.room_code, minutes));
+  const schedule = entries.map((entry) =>
+    mapEntryToLectureEvent(entry, room.room_code, minutes, todayInTimezone)
+  );
 
   const currentLecture = schedule.find((lecture) => lecture.status === 'current') ?? null;
   const nextLecture = schedule.find((lecture) => lecture.status === 'upcoming') ?? null;

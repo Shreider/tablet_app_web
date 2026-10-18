@@ -4,6 +4,7 @@ export interface LectureEvent {
   id: string;
   title: string;
   room: string;
+  date: string;
   lecturer: string;
   group: string;
   type: string;
@@ -15,6 +16,7 @@ export interface LectureEvent {
   isCurrent: boolean;
   fieldOfStudy?: string;
   subjectCode?: string;
+  subject?: string;
 }
 
 export interface RoomDetails {

@@ -20,6 +20,63 @@ API jest dostępne na porcie `3001` (lub `BACKEND_PORT`), pod `/api`.
 Przykładowe sprawdzenie: `http://ADRES_BACKENDU:3001/api/health`.
 Frontend łączy się z tym serwerem przez własne ustawienie `BACKEND_URL`.
 
+## Dane sali w JSON
+
+Publiczny endpoint `GET /api/room/:id` odczytuje salę i jej zajęcia z PostgreSQL.
+`:id` oznacza numer/kod sali, np. `205`, zgodnie z polem `roomCode` w bazie;
+nie jest to wewnętrzny identyfikator rekordu bazy.
+
+```text
+GET /api/room/205                  — dzisiejszy plan w APP_TIMEZONE
+GET /api/room/205?date=2026-10-18  — plan wybranego dnia
+```
+
+Przykładowa odpowiedź (wartości pochodzą z rekordów danej sali):
+
+```json
+{
+  "room": {
+    "roomId": "205",
+    "name": "Sala komputerowa 205",
+    "building": "Budynek A",
+    "floor": "II piętro"
+  },
+  "date": "2026-10-18",
+  "generatedAt": "2026-10-18T12:00:00.000Z",
+  "currentLecture": null,
+  "nextLecture": null,
+  "schedule": [
+    {
+      "id": "lec-42",
+      "title": "Bazy danych",
+      "room": "205",
+      "date": "2026-10-18",
+      "subject": "Bazy danych",
+      "subjectCode": "INF-BD",
+      "lecturer": "Jan Kowalski",
+      "group": "INF-2A",
+      "type": "Laboratorium",
+      "startTime": "08:00",
+      "endTime": "09:30",
+      "description": "Zapytania SQL",
+      "fieldOfStudy": "Informatyka",
+      "status": "finished",
+      "isCurrent": false
+    }
+  ]
+}
+```
+
+Lista `schedule` zawiera wyłącznie wpisy tej sali z wybranego dnia, posortowane
+według godziny rozpoczęcia. `currentLecture` wskazuje trwające zajęcia,
+a `nextLecture` najbliższe nadchodzące; przy braku odpowiednich zajęć mają
+wartość `null`. Zajęcia z przeszłych dni są zakończone, a z przyszłych — nadchodzące.
+
+Istniejąca sala bez zajęć zwraca `200` i `schedule: []`. Nieistniejąca sala
+zwraca `404` z kodem `ROOM_NOT_FOUND`. Nieprawidłowa data zwraca `400`
+z kodem `INVALID_DATE`. Odpowiedzi mają format JSON i nagłówek
+`Cache-Control: no-store`, aby kolejne odczyty pobierały aktualny stan planu.
+
 PostgreSQL jest dostępny tylko dla backendu w prywatnej sieci Dockera.
 Dane są przechowywane w wolumenie `tablet_app_backend_postgres-data`.
 Konta bazy i ich dotychczasowe hasła pozostają takie jak przed podziałem projektu.
@@ -56,3 +113,17 @@ npm run dev
 
 Kompilacja: `npm run build`. Start skompilowanego API: `npm start`.
 Szczegóły bazy: [database/README.md](database/README.md).
+
+## Test integracyjny endpointu
+
+Test uruchamia rzeczywisty backend HTTP i sprawdza odpowiedzi z PostgreSQL.
+Wymaga osobnej bazy z nazwą kończącą się na `_test` i konta z uprawnieniami
+do migracji oraz tworzenia danych testowych:
+
+```bash
+TEST_DATABASE_URL=postgresql://test_user:test_password@localhost:55432/tablet_room_api_test npm run test:integration
+```
+
+Test wykonuje migracje na tej bazie, dodaje własne rekordy i usuwa je po zakończeniu.
+Sprawdza filtr sali i dnia, kolejność zajęć, dane przedmiotu, puste harmonogramy,
+brak sali oraz błędne daty. Nie uruchamia seeda demonstracyjnego.

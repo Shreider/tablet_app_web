@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test:integration": "npm run build && node --import tsx --test test/roomApi.integration.test.ts",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "db:migrate": "DATABASE_URL=${DATABASE_ADMIN_URL:-$DATABASE_URL} prisma migrate deploy",
