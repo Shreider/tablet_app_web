@@ -1,6 +1,7 @@
 import type { RoomDetails } from '../types/schedule';
 import { ClockDisplay } from './ClockDisplay';
 import { Icon } from './Icon';
+import { ApiSettingsButton } from './ApiSettings';
 
 interface HeaderBarProps {
   room: RoomDetails;
@@ -26,6 +27,7 @@ export function HeaderBar({
       </div>
       <div className="header-actions">
         <ClockDisplay />
+        <ApiSettingsButton />
         <button
           type="button"
           className="button button--primary"

@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import App from '../App';
 import { PageState } from '../components/PageState';
 import { useRoomSchedule } from '../hooks/useRoomSchedule';
+import { useApiSettings } from '../components/ApiSettings';
 
-function RoomView({ roomId }: { roomId: string }): JSX.Element {
-  const { data, loading, error, notFound, refresh } = useRoomSchedule(roomId);
+function RoomView({ roomId, endpoint }: { roomId: string; endpoint: string }): JSX.Element {
+  const { data, loading, error, notFound, refresh } = useRoomSchedule(roomId, endpoint);
   useEffect(() => {
     document.title = `Sala ${roomId} · Plan zajęć`;
     return () => {
@@ -34,5 +35,6 @@ function RoomView({ roomId }: { roomId: string }): JSX.Element {
 
 export function RoomPage(): JSX.Element {
   const { roomId = '' } = useParams<{ roomId: string }>();
-  return <RoomView key={roomId} roomId={roomId} />;
+  const { endpoint } = useApiSettings();
+  return <RoomView key={JSON.stringify([roomId, endpoint])} roomId={roomId} endpoint={endpoint} />;
 }

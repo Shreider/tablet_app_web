@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { ApiSettingsButton } from './ApiSettings';
 
 interface PageStateProps {
   title: string;
@@ -17,13 +18,14 @@ export function PageState({ title, message, loading, onRetry }: PageStateProps):
         <p className="eyebrow">Plan sali</p>
         <h1>{title}</h1>
         <p>{message}</p>
-        {!loading && onRetry && (
-          <div className="state-actions">
+        <div className="state-actions">
+          {!loading && onRetry && (
             <button type="button" className="button button--primary" onClick={onRetry}>
               Spróbuj ponownie
             </button>
-          </div>
-        )}
+          )}
+          <ApiSettingsButton />
+        </div>
       </section>
     </main>
   );

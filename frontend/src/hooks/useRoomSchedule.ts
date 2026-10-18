@@ -9,7 +9,7 @@ interface RoomState {
   notFound: boolean;
 }
 
-export function useRoomSchedule(roomId: string) {
+export function useRoomSchedule(roomId: string, endpoint: string) {
   const [state, setState] = useState<RoomState>({
     data: null,
     loading: true,
@@ -35,7 +35,7 @@ export function useRoomSchedule(roomId: string) {
       controller.signal.addEventListener('abort', cancelRequest, { once: true });
       const timeout = window.setTimeout(cancelRequest, 15_000);
       try {
-        const data = await fetchRoomSchedule(roomId, requestController.signal);
+        const data = await fetchRoomSchedule(roomId, requestController.signal, endpoint);
         if (!controller.signal.aborted)
           setState({ data, loading: false, error: null, notFound: false });
       } catch (error) {
@@ -70,7 +70,7 @@ export function useRoomSchedule(roomId: string) {
       window.removeEventListener('online', refreshWhenVisible);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, [roomId, request]);
+  }, [roomId, endpoint, request]);
 
   return { ...state, refresh: () => setRequest((value) => value + 1) };
 }

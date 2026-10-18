@@ -1,7 +1,5 @@
 import type { LectureEvent, RoomScheduleResponse } from '../types/schedule';
-
-const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api';
+import { defaultApiEndpoint, resolveApiEndpoint } from '../lib/apiEndpoint';
 
 export class ApiError extends Error {
   status: number;
@@ -72,9 +70,10 @@ const parseJsonResponse = async (response: Response): Promise<RoomScheduleRespon
 
 export const fetchRoomSchedule = async (
   roomId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  endpoint = defaultApiEndpoint
 ): Promise<RoomScheduleResponse> => {
-  const response = await fetch(`${API_BASE_URL}/room/${encodeURIComponent(roomId)}`, {
+  const response = await fetch(resolveApiEndpoint(endpoint, roomId), {
     method: 'GET',
     headers: { Accept: 'application/json' },
     cache: 'no-store',

@@ -28,6 +28,35 @@ budowania; po jego zmianie przebuduj obraz. Zmiana `BACKEND_URL` wymaga tylko
 odtworzenia kontenera (`docker compose up -d --force-recreate frontend`).
 Token administratora i dane dostępowe do bazy są konfigurowane w backendzie.
 
+## Zmiana endpointu podczas działania
+
+W widoku sali kliknij **API**, wpisz endpoint i wybierz **Zapisz**. Przykłady:
+
+```text
+https://inny-serwer.example/api/room/{roomId}
+https://inny-serwer.example/api/room/205
+/api/room/{roomId}
+```
+
+`{roomId}` jest zastępowany numerem sali z adresu strony, np. `205` dla
+`/room/205`. Można też podać pełny endpoint konkretnej sali lub endpoint
+z parametrami zapytania. Musi zwracać JSON w opisanym poniżej formacie.
+
+Zmiana działa natychmiast, bez odświeżania strony, restartu serwera ani budowania
+obrazu. Poprzednie żądanie jest anulowane, a plan pobierany od nowa z wybranego
+źródła. Ustawienie jest zapisywane w `localStorage` tej przeglądarki i zachowywane
+po ponownym otwarciu strony. Przy zablokowanej pamięci przeglądarki działa do
+przeładowania strony. Zmiany są synchronizowane między otwartymi kartami.
+
+Przycisk **Przywróć domyślne** wraca do `/api/room/{roomId}` (lub adresu
+wynikającego z `VITE_API_BASE_URL`). Ustawienia są dostępne również podczas
+ładowania i po błędzie połączenia, aby można było poprawić niedziałający adres.
+
+Własny adres innego serwera jest wywoływany bezpośrednio z przeglądarki.
+Backend musi dopuszczać adres frontendu w `CORS_ORIGIN`. Przy stronie działającej
+przez HTTPS własny endpoint również musi używać HTTPS. Domyślna ścieżka `/api`
+nadal korzysta z proxy serwera frontendu.
+
 Konfiguracja Nginx: `nginx/default.conf.template`. Połączenie z API odbywa się
 po stronie serwera; przeglądarka używa `/api` we własnej domenie.
 
