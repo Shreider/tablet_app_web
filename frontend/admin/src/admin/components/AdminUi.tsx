@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, type MouseEvent, type ReactNode } from 'react';
 import { AdminDialog } from './AdminDialog';
 
 export function AdminPanel({
@@ -183,6 +183,15 @@ export function ConfirmModal({
       {children}
     </AdminDialog>
   );
+}
+
+// Kalendarz / wybór godziny otwiera się po kliknięciu w dowolne miejsce pola, nie tylko w ikonę.
+export function openNativePicker(event: MouseEvent<HTMLInputElement>): void {
+  try {
+    event.currentTarget.showPicker();
+  } catch {
+    // Przeglądarka bez showPicker() — zostaje domyślne zachowanie.
+  }
 }
 
 export const formatDateTime = (value: string): string => {

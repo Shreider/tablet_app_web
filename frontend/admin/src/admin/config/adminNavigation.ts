@@ -127,7 +127,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: locationNavItems
   },
   {
-    label: 'Kadra i oferta',
+    label: 'Kadra',
     items: teachingNavItems
   },
   {
@@ -146,7 +146,7 @@ export const resolvePageTitle = (pathname: string): string => {
 
 export const sectionLabelMap: Record<AdminEntitySection, string> = {
   locations: 'Lokalizacje',
-  teaching: 'Kadra i oferta'
+  teaching: 'Kadra'
 };
 
 export const resolveNavContext = (

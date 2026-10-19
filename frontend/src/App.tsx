@@ -44,7 +44,6 @@ export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
           lecture={selectedLecture}
           defaultLecture={defaultLecture}
           disabled={scheduleOpen}
-          room={room}
           onSelect={setSelectedId}
           onReset={() => setSelectedId(null)}
         />
@@ -63,7 +62,6 @@ export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
 
       <ScheduleSidebar
         schedule={schedule}
-        date={data.date}
         activeId={selectedLecture?.id}
         isOpen={scheduleOpen}
         onClose={() => setScheduleOpen(false)}

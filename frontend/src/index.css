@@ -536,6 +536,19 @@ p {
   padding: 21px 20px;
   border-bottom: 1px solid var(--line);
 }
+/* Panel "Plan dnia": tytuł na środku, przycisk zamknięcia przy prawej krawędzi. */
+.dialog--drawer .dialog__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+.dialog--drawer .dialog__header > div {
+  grid-column: 2;
+  text-align: center;
+}
+.dialog--drawer .dialog__header > .icon-button {
+  grid-column: 3;
+  justify-self: end;
+}
 .dialog__header h2 {
   font-size: 21px;
   font-weight: 600;

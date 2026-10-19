@@ -8,7 +8,13 @@ import {
 } from '../api/adminApi';
 import { useAdminAuth } from '../auth/AdminAuthContext';
 import { AdminDialog } from '../components/AdminDialog';
-import { AdminPanel, EmptyBlock, ErrorBlock, LoadingBlock } from '../components/AdminUi';
+import {
+  AdminPanel,
+  EmptyBlock,
+  ErrorBlock,
+  LoadingBlock,
+  openNativePicker
+} from '../components/AdminUi';
 import type { AdminConflictEntry, AdminConflictPair, AdminScheduleOptionsResponse } from '../types';
 
 const initialEntryForm: ScheduleEntryFormPayload = {
@@ -276,6 +282,7 @@ export function AdminConflictsPage(): JSX.Element {
                 className="admin-input"
                 value={editState.form.eventDate}
                 onChange={(e) => handleFormChange('eventDate', e.target.value)}
+                onClick={openNativePicker}
               />
             </label>
 
@@ -286,6 +293,7 @@ export function AdminConflictsPage(): JSX.Element {
                 className="admin-input"
                 value={editState.form.startTime}
                 onChange={(e) => handleFormChange('startTime', e.target.value)}
+                onClick={openNativePicker}
               />
             </label>
 
@@ -296,6 +304,7 @@ export function AdminConflictsPage(): JSX.Element {
                 className="admin-input"
                 value={editState.form.endTime}
                 onChange={(e) => handleFormChange('endTime', e.target.value)}
+                onClick={openNativePicker}
               />
             </label>
 

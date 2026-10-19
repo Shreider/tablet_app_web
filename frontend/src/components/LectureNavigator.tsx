@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { LectureEvent, RoomDetails } from '../types/schedule';
+import type { LectureEvent } from '../types/schedule';
 import { useLectureGestures } from '../hooks/useLectureGestures';
 import { CurrentLecturePanel } from './CurrentLecturePanel';
 import { Icon } from './Icon';
@@ -8,7 +8,6 @@ interface LectureNavigatorProps {
   schedule: LectureEvent[];
   lecture: LectureEvent | null;
   defaultLecture: LectureEvent | null;
-  room: RoomDetails;
   disabled: boolean;
   onSelect: (id: string) => void;
   onReset: () => void;
@@ -18,7 +17,6 @@ export function LectureNavigator({
   schedule,
   lecture,
   defaultLecture,
-  room,
   disabled,
   onSelect,
   onReset
@@ -71,7 +69,7 @@ export function LectureNavigator({
           }
         }}
       >
-        <CurrentLecturePanel key={lecture?.id ?? 'empty'} lecture={lecture} room={room} />
+        <CurrentLecturePanel key={lecture?.id ?? 'empty'} lecture={lecture} />
       </div>
       {schedule.length > 1 && (
         <nav className="lecture-navigation" aria-label="Nawigacja po zajęciach">

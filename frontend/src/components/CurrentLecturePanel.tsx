@@ -1,14 +1,13 @@
-import type { LectureEvent, RoomDetails } from '../types/schedule';
+import type { LectureEvent } from '../types/schedule';
 import { useNow } from '../hooks/useNow';
-import { durationOf, formatDay, formatTime, toMinutes } from '../lib/schedule';
+import { durationOf, formatTime, toMinutes } from '../lib/schedule';
 import { Icon } from './Icon';
 
 interface CurrentLecturePanelProps {
   lecture: LectureEvent | null;
-  room: RoomDetails;
 }
 
-export function CurrentLecturePanel({ lecture, room }: CurrentLecturePanelProps): JSX.Element {
+export function CurrentLecturePanel({ lecture }: CurrentLecturePanelProps): JSX.Element {
   const now = useNow();
   if (!lecture) {
     return (
@@ -81,21 +80,8 @@ export function CurrentLecturePanel({ lecture, room }: CurrentLecturePanelProps)
           </dd>
         </div>
         <div>
-          <dt>Data</dt>
-          <dd><time dateTime={lecture.date}>{formatDay(lecture.date)}</time></dd>
-        </div>
-        <div>
           <dt>Prowadzący</dt>
           <dd>{lecture.lecturer}</dd>
-        </div>
-        <div>
-          <dt>Sala</dt>
-          <dd>
-            {room.roomId}
-            <span>
-              {room.building} · {room.floor}
-            </span>
-          </dd>
         </div>
         <div>
           <dt>Grupa</dt>

@@ -582,14 +582,6 @@ export function AdminRoomsPage(): JSX.Element {
           <ErrorBlock title="Błąd szczegółów" message={detailsState.error} />
         ) : detailsState.room ? (
           <div className="space-y-3">
-            <a
-              className="admin-btn admin-btn-secondary"
-              href={`${(import.meta.env.VITE_PUBLIC_APP_BASE_URL || window.location.origin).replace(/\/$/, '')}/room/${encodeURIComponent(detailsState.room.roomCode)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Otwórz widok sali {detailsState.room.roomCode}
-            </a>
             <div className="grid gap-2 rounded-xl border border-[#2d4568] bg-[#0f1d31] p-3 text-sm text-[#a6bbdb] md:grid-cols-2">
               <p className="m-0">
                 Nazwa: <strong>{detailsState.room.displayName}</strong>

@@ -128,7 +128,7 @@ export function AdminDashboardPage(): JSX.Element {
               icon="rooms"
             />
             <QuickLinkCard
-              title="Kadra i oferta"
+              title="Kadra"
               text="Prowadzący, grupy i przedmioty"
               to="/teaching/lecturers"
               icon="users"

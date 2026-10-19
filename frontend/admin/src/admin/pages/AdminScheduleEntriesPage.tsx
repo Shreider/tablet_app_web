@@ -17,7 +17,8 @@ import {
   ErrorBlock,
   LoadingBlock,
   PaginationControls,
-  formatDateTime
+  formatDateTime,
+  openNativePicker
 } from '../components/AdminUi';
 import type { AdminScheduleEntry, AdminScheduleOptionsResponse } from '../types';
 
@@ -709,6 +710,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, eventDate: event.target.value }))
                 }
+                onClick={openNativePicker}
                 required
               />
             </label>
@@ -804,6 +806,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, startTime: event.target.value }))
                 }
+                onClick={openNativePicker}
                 required
               />
             </label>
@@ -817,6 +820,7 @@ export function AdminScheduleEntriesPage(): JSX.Element {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, endTime: event.target.value }))
                 }
+                onClick={openNativePicker}
                 required
               />
             </label>
