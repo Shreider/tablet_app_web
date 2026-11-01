@@ -1,194 +1,152 @@
-# Room Tablet Preview
+# Plan sal na tabletach — dokumentacja projektu
 
-Projekt jest podzielony na dwie niezależnie wdrażane aplikacje:
+Projekt wyświetla dzienny plan sali, pozwala zarządzać harmonogramem i zachowuje pobrane plany w lokalnych plikach JSON. Dwa niezależne pakiety wdrożeniowe to `backend/` oraz `frontend/`.
 
-- `frontend/` — widok sal i panel administratora, budowane do plików statycznych
-  i udostępniane przez jeden serwer Nginx, oraz mała usługa cache zapisująca plany do JSON;
-- `backend/` — API Node.js / Express, Prisma i PostgreSQL.
+Dokumentacja opisuje kod gałęzi `zpi/frontend/1.11.2026-V1.10` z 2026-11-01. Przykładowe adresy, ID i tokeny zastąp wartościami swojej instalacji. Nazwa lokalnego folderu może nadal zawierać `V1.9`; wersję sprawdzaj przez `git branch --show-current` i `git log -1`.
 
-Każdy katalog ma własny `Dockerfile`, `docker-compose.yml`, `.env.example`
-i instrukcję uruchomienia. Na serwer wystarczy skopiować tylko właściwy katalog,
-bez `node_modules`, `dist` i lokalnych plików `.env`.
+## Spis dokumentacji
 
-## Dwa osobne serwery
+| Potrzeba | Dokument |
+| --- | --- |
+| Całość, uruchomienie, komunikacja i awarie | Ten plik |
+| Instalacja i utrzymanie głównego API | [Backend](backend/README.md) |
+| Endpointy, parametry, odpowiedzi i walidacja | [API backendu](backend/docs/API.md) |
+| Wszystkie pliki i funkcje backendu | [Kod backendu](backend/docs/KOD.md) |
+| Tabele, migracje, seed i kopie PostgreSQL | [Baza danych](backend/database/README.md) |
+| Instalacja widoku sali, panelu i cache | [Frontend](frontend/README.md) |
+| Obsługa ekranów i panelu administratora | [Użytkowanie](frontend/docs/UZYTKOWANIE.md) |
+| Trwałość JSON, algorytm i API kopii | [Cache](frontend/docs/CACHE.md) |
+| Pliki, komponenty, hooki i funkcje frontendu | [Kod frontendu](frontend/docs/KOD.md) |
+| Pełny spis plików repozytorium | [Indeks plików](docs/PLIKI.md) |
+| Testy i granice sprawdzenia | [Weryfikacja](docs/WERYFIKACJA.md) |
 
-Przykład: serwer frontendu `192.168.1.10`, serwer backendu `192.168.1.20`.
-Oba wymagają Dockera z Buildx/BuildKit oraz Docker Compose.
+## Architektura
 
-### Serwer backendu
+```mermaid
+flowchart LR
+    Browser[Przeglądarka] --> Nginx[Nginx: statyczny widok sali i panel]
+    Nginx -->|/api/room i /api/cache| Cache[Node.js: lokalny cache]
+    Cache --> JSON[frontend/cache-data: plik JSON]
+    Cache -->|GET planu sali| API[Express: główny backend]
+    Nginx -->|Pozostałe /api| API
+    API --> PG[(PostgreSQL)]
+```
 
-Skopiuj na niego katalog `backend`, a następnie w tym katalogu:
+Przeglądarka domyślnie łączy się wyłącznie z serwerem frontendu. Nginx przekazuje odczyt planu do `cache`, a żądania panelu do głównego API. Cache pobiera poprawne plany z API i zapisuje je na dysku. Interfejsy React są statycznymi plikami; JSON zapisuje osobny proces Node.js. Przeglądarka nie łączy się z PostgreSQL.
+
+| Usługa | Odpowiedzialność | Port kontenera | Port hosta domyślnie | Trwałe dane |
+| --- | --- | --- | --- | --- |
+| `frontend` | Nginx, dwa interfejsy i proxy | 80 | 5173 | Pliki interfejsu w obrazie |
+| `cache` | Pobranie, walidacja, zapis i kopie planów | 3002 | Niepublikowany | Bind mount `frontend/cache-data/` → `/data` |
+| `backend` | Publiczne API i administracja | 3001 | 3001 | Dane w PostgreSQL |
+| `database` | PostgreSQL 16 | 5432 | Niepublikowany | Nazwany wolumen `postgres-data` |
+
+Główne Compose łączy frontend, cache i API przez `public_net`, a API i bazę przez wewnętrzną `data_net`. Jawne nazwy sieci to `room-tablet-public-net` i `room-tablet-data-net`. Cache nie potrzebuje dostępu do bazy.
+
+## Całość na jednym komputerze
+
+Wymagane: działający Docker, BuildKit i Compose v2 obsługujący `--wait`. Windows: Docker Desktop w trybie kontenerów Linux. Polecenia wykonuj z katalogu tego README.
+
+Przy pierwszej instalacji utwórz `.env` (nie nadpisuj istniejących ustawień):
 
 ```bash
 cp .env.example .env
 ```
 
-Ustaw w `.env` własny `ADMIN_TOKEN` i adres strony:
+PowerShell: `Copy-Item .env.example .env`. Edytuj plik, np.:
 
 ```dotenv
+FRONTEND_PORT=5173
 BACKEND_PORT=3001
-ADMIN_TOKEN=wstaw-wlasny-dlugi-token
+BACKEND_URL=http://backend:3001
+ADMIN_TOKEN=wstaw-wlasny-dlugi-token-panelu
+CACHE_ADMIN_TOKEN=wstaw-wlasny-dlugi-token-kopii
 APP_TIMEZONE=Europe/Warsaw
-CORS_ORIGIN=http://192.168.1.10:5173
+CORS_ORIGIN=http://localhost:5173
+TABLET_ROOM_ID=205
+CACHE_ROOM_IDS=205,30
+CACHE_REFRESH_SECONDS=60
+CACHE_TIMEOUT_SECONDS=5
 ```
 
-Uruchom API i bazę:
+`BACKEND_URL` musi być osiągalny z kontenerów frontendu i cache, bez `/api` i końcowego `/`. Nazwa `backend` działa w sieci wspólnego Compose. `.env` jest źródłem podstawień w Compose; dowolna dopisana zmienna nie trafia automatycznie do kontenera.
 
 ```bash
+docker compose config --quiet
 docker compose up -d --build --wait
+docker compose ps
 ```
 
-Migracje wykonują się automatycznie. Na nowej bazie można opcjonalnie utworzyć
-dane demonstracyjne:
+Migracje wykonują się przy starcie API. **Nowa baza jest pusta** — samo uruchomienie nie dodaje sal. Opcjonalne dane demonstracyjne:
 
 ```bash
 docker compose exec -T backend npm run db:seed
 ```
 
-Seed usuwa istniejące dane i odtwarza zestaw demonstracyjny.
+Seed usuwa dane aplikacji i tworzy od nowa pięć sal z 25 zajęciami na dzień uruchomienia. Używaj go, gdy świadomie chcesz zastąpić zawartość bazy. Przygotowanie instalacji bez seeda: [baza danych](backend/database/README.md).
 
-### Serwer frontendu
+Adresy:
 
-Skopiuj na niego katalog `frontend`, a następnie w tym katalogu:
+- `http://localhost:5173/` — sala z `TABLET_ROOM_ID`;
+- `http://localhost:5173/room/205` — sala o kodzie `205`;
+- `http://localhost:5173/admin/` — panel, logowanie przez `ADMIN_TOKEN`;
+- `http://localhost:3001/api/health` — API i połączenie z bazą;
+- `http://localhost:5173/healthz` — sam Nginx.
 
-```bash
-cp .env.example .env
-```
+Na tablecie zamiast `localhost` wpisz adres serwera, np. `http://192.168.1.10:5173/room/205`. Dostosuj sieć i `CORS_ORIGIN`. Dostarczone Compose publikuje porty na interfejsach hosta; lokalny override może to zmieniać.
 
-Ustaw adres serwera backendu osiągalny **z serwera frontendu**:
+## Dwa osobne serwery
 
-```dotenv
-BACKEND_URL=http://192.168.1.20:3001
-FRONTEND_PORT=5173
-TABLET_ROOM_ID=205
-CACHE_ADMIN_TOKEN=wstaw-wlasny-dlugi-token-kopii
-```
+Na serwer API skopiuj całe `backend/`, przygotuj jego `.env` z `ADMIN_TOKEN`, `CORS_ORIGIN` i ewentualnie `BACKEND_PORT`, a następnie uruchom Compose z tego katalogu. Szczegóły: [backend](backend/README.md).
 
-`BACKEND_URL` musi zawierać `http://` lub `https://`, bez końcowego `/`
-i bez `/api`. Nie wpisuj `localhost`, jeśli backend działa na innej maszynie.
+Na serwer WWW skopiuj całe `frontend/`, przygotuj jego `.env`, np. `BACKEND_URL=http://192.168.1.20:3001` i własny `CACHE_ADMIN_TOKEN`, następnie uruchom jego Compose. Szczegóły: [frontend](frontend/README.md). Tablet potrzebuje połączenia z WWW; serwer WWW z API. `localhost` nie oznacza innej maszyny.
 
-```bash
-docker compose up -d --build --wait
-```
+Każdy pakiet można wdrożyć bez drugiego katalogu. Główne Compose uruchamia razem cztery usługi, a podkatalogi mają własne Compose. Domyślne nazwy projektów: `tablet_app_web`, `tablet_app_backend`, `tablet_app_frontend`. Główne Compose ma stałe `container_name`; równoległe instalacje na jednym hoście wymagają osobnych nazw kontenerów, sieci i portów. Samo `-p` nie zmienia jawnych nazw kontenerów ani sieci.
 
-Adresy w przeglądarce:
+## Awarie i trwałość
 
-- widok domyślnej sali: `http://192.168.1.10:5173/`;
-- konkretna sala: `http://192.168.1.10:5173/room/205`;
-- panel administratora: `http://192.168.1.10:5173/admin/`.
+| Sytuacja | Zachowanie |
+| --- | --- |
+| Backend lub jego baza nie odpowiada | Pobrany plan może być serwowany z JSON z ostrzeżeniem; panel nie zapisuje zmian |
+| Restart frontendu bez backendu | Plan działa po zachowaniu folderu `cache-data/` i tego samego źródła `BACKEND_URL` |
+| Sala/data nigdy niepobrana | Cache nie odtworzy brakujących danych; zwykle odpowiada 503 |
+| API odpowiada 401/403/404 | Cache zachowuje błąd; 404 usuwa zapisy tej sali |
+| Zmiana dnia bez połączenia | Możliwy ostatni wcześniejszy plan z ostrzeżeniem i właściwą datą; jawnej daty nie zastępuje się inną |
+| Cache zatrzymany | Nowy odczyt nie działa; otwarta karta może zachować ostatnie dane w RAM |
+| Nginx lub serwer WWW wyłączony | Nowe otwarcie i przeładowanie strony nie działa; brak service workera i instalowanej kopii aplikacji offline |
+| Własny endpoint w oknie API | Przeglądarka odpytuje go bezpośrednio; serwerowy cache nie uczestniczy w tym połączeniu |
 
-Panel działa na tym samym porcie co widok sal; dawny port `5174` nie jest
-potrzebny przy wdrożeniu. Logowanie używa `ADMIN_TOKEN` ustawionego w backendzie.
+Import JSON zasila lokalny cache. Nie zapisuje danych do PostgreSQL, nie odtwarza pełnej bazy i nie synchronizuje zmian administracyjnych po awarii. Nie ma automatycznego wysyłania backupu do dużego serwera.
 
-## Komunikacja między aplikacjami
+## Codzienna obsługa
 
-Przeglądarka łączy się z frontendem. Nginx przekazuje `/api/room/:roomId`
-do lokalnej usługi cache. Usługa pobiera plan z `BACKEND_URL`, sprawdza jego
-format i zapisuje ostatnią poprawną odpowiedź w pliku JSON w `frontend/cache-data/`.
-Plan jest odświeżany co 60 sekund, również dla poznanych sal bez otwartej strony.
-Przy awarii głównego serwera dostępna jest zapisana kopia wraz z czasem pobrania.
-Adres backendu nie jest wbudowany w kod JavaScript. Pozostałe żądania API,
-w tym panel administratora, są przekazywane bezpośrednio do `BACKEND_URL`.
-
-Serwer frontendu musi mieć dostęp do portu API backendu (domyślnie `3001`).
-PostgreSQL nie publikuje portu na hosta i działa w prywatnej sieci backendu.
-Frontend może uruchomić się także wtedy, gdy API jest chwilowo niedostępne.
-
-Po zmianie adresu backendu wystarczy odtworzyć kontener frontendu:
+W katalogu wybranego Compose:
 
 ```bash
-docker compose up -d --force-recreate frontend cache
-```
-
-`TABLET_ROOM_ID` jest ustawiany podczas budowania obrazu. Po jego zmianie użyj:
-
-```bash
-docker compose up -d --build frontend
-```
-
-Numer w `/room/:roomId` ma pierwszeństwo przed domyślną salą. Dla jednego serwera
-obsługującego wiele tabletów pozostaw `TABLET_ROOM_ID` puste i przypisz każdemu
-tabletowi stały adres, np. `/room/30` lub `/room/205`. Sam `/` bez domyślnej sali
-wyświetla informację o braku konfiguracji.
-
-### Lokalna kopia planów
-
-W oknie **API** widoku sali są przyciski **Pobierz kopię** i **Wczytaj kopię**.
-W trybie lokalnym tokenem kopii jest domyślnie `ADMIN_TOKEN`; na osobnym serwerze
-frontendu ustaw `CACHE_ADMIN_TOKEN`. Eksport i import obejmują tylko zapisane plany,
-bez haseł i pełnej bazy danych. Kopię można wczytać przy niedostępnym głównym serwerze.
-Plik musi pochodzić z tego samego `BACKEND_URL`; błędny plik nie zastępuje zapisanych danych.
-
-Katalog `frontend/cache-data/` na komputerze zachowuje dane po odtworzeniu kontenerów.
-Oba warianty Compose podpinają go do `/data` w usłudze cache. Ścieżki są względne,
-więc ten sam projekt działa na Linuksie i przez Docker Desktop na Windowsie.
-Przykładowo, przy projekcie w `C:\tablet_app_web` plik będzie w
-`C:\tablet_app_web\frontend\cache-data\plans-<identyfikator-serwera>.json`.
-Katalog danych jest pomijany przez Git i przy budowaniu obrazów.
-Zmiana `BACKEND_URL` wybiera osobny plik cache, aby nie mieszać danych różnych serwerów.
-Zapisany wczorajszy plan jest wyraźnie oznaczony; statusy zajęć są obliczane na bieżąco.
-Szczegóły konfiguracji, API kopii i testów są w [instrukcji frontendu](frontend/README.md#lokalny-cache-json).
-
-## Uruchomienie lokalne całego projektu
-
-Główny plik Compose pozostaje dostępny do pracy na jednym komputerze:
-
-```bash
-docker compose up -d --build --wait --remove-orphans
-```
-
-- widok sal: `http://localhost:5173`;
-- panel: `http://localhost:5173/admin/`;
-- API: `http://localhost:3001/api/health`.
-
-Opcja `--remove-orphans` usuwa kontener dawnego osobnego panelu admina.
-Istniejący wolumen `tablet_app_web_postgres-data` jest zachowany, gdy uruchamiasz
-projekt pod dotychczasową nazwą `tablet_app_web`, ustawioną teraz jawnie w Compose.
-Nadal można użyć własnej nazwy projektu przez `docker compose -p NAZWA`.
-Zmienne `POSTGRES_VOLUME` i `POSTGRES_VOLUME_EXTERNAL=true` pozwalają wskazać
-istniejący wolumen niezależnie od nazwy projektu. Zatrzymanie aplikacji:
-
-```bash
+docker compose logs --tail=100 frontend cache backend
+docker compose stop backend
+docker compose up -d backend
 docker compose down
 ```
 
-## Przeniesienie dotychczasowej bazy na drugi serwer
+W samodzielnym pakiecie podaj tylko istniejące usługi. `down` zachowuje bazę i folder cache. `down -v` usuwa zarządzane nazwane wolumeny, w tym bazę; nie usuwa bind mountu.
 
-Osobny backend używa własnego wolumenu `tablet_app_backend_postgres-data`.
-Na tym samym serwerze można użyć dotychczasowego wolumenu bez kopiowania danych:
-zatrzymaj poprzednie API i PostgreSQL, a w `.env` backendu ustaw
-`POSTGRES_VOLUME=tablet_app_web_postgres-data` oraz `POSTGRES_VOLUME_EXTERNAL=true`.
-Potem uruchom Compose z samego katalogu `backend/`.
+Po zmianie kodu użyj `docker compose up -d --build --wait`. Po zmianie `BACKEND_URL`: `docker compose up -d --force-recreate frontend cache`. Po zmianie `ADMIN_TOKEN` odtwórz backend oraz cache, jeśli dziedziczy token panelu. `TABLET_ROOM_ID` wymaga przebudowania frontendu. Sam `restart` nie wczytuje nowej konfiguracji Compose.
 
-Przed przeniesieniem wykonaj kopię istniejącej bazy z głównego katalogu projektu:
+Przed aktualizacją zachowaj kopię [PostgreSQL](backend/database/README.md#kopia-i-odtworzenie-bazy) i [JSON](frontend/docs/CACHE.md#eksport-i-import). Migracje nie mają automatycznego cofania; powrót do starego obrazu może wymagać zgodnej kopii bazy.
 
-```bash
-docker compose exec -T database pg_dump -U admin -d tablet_schedule -Fc > tablet_schedule.dump
-```
+## Pliki głównego katalogu
 
-Przenieś plik na serwer backendu. Po pierwszym uruchomieniu bazy zatrzymaj API,
-odtwórz kopię i uruchom API ponownie, aby wykonało ewentualne nowe migracje:
+| Plik | Rola |
+| --- | --- |
+| `README.md` | Punkt wejścia i instrukcja wspólnego wdrożenia |
+| `docker-compose.yml` | Cztery usługi, porty, sieci, healthchecki i magazyny danych |
+| `.env.example` | Wzór ustawień; faktyczne sekrety są w ignorowanym `.env` |
+| `.gitignore` | Wyklucza zależności, buildy, sekrety, JSON i lokalny override |
+| `DZIENNIK_PRAKTYK_27.10.2025-21.04.2026.md` | Historyczny dziennik praktyk, nie instrukcja bieżącego wdrożenia |
+| `docs/PLIKI.md` | Indeks wszystkich plików wersjonowanych i dokumentacji |
+| `docs/WERYFIKACJA.md` | Zakres testów i procedury sprawdzenia |
 
-```bash
-docker compose stop backend
-docker compose exec -T database pg_restore -U admin -d tablet_schedule --clean --if-exists --exit-on-error < tablet_schedule.dump
-docker compose up -d backend
-```
+Lokalny `docker-compose.override.yml`, jeśli istnieje, jest automatycznie łączony z główną konfiguracją. Nie jest częścią repozytorium. Samą konfigurację repo sprawdzisz przez `docker compose -f docker-compose.yml config --quiet`.
 
-Nie uruchamiaj seeda po odtworzeniu kopii.
-
-## API i model danych
-
-Publiczne endpointy: `GET /api/health`, `GET /api/rooms`,
-`GET /api/room/:roomId` oraz `GET /api/schedule` (filtry `roomId` i `date`).
-Endpoint sali obsługuje również `?date=YYYY-MM-DD`; bez tego parametru zwraca
-dzisiejszy plan. Kontrakt JSON i przykłady opisano w [README backendu](backend/README.md#dane-sali-w-json).
-Panel korzysta z `/api/admin/*`: logowania, sesji, sal, harmonogramu,
-słowników, konfliktów i dashboardu. Autoryzacja: `Authorization: Bearer <ADMIN_TOKEN>`.
-
-Schemat jest w `backend/prisma/schema.prisma`, a migracje w
-`backend/prisma/migrations/`. Publiczne API używa konta bazy `web_app` do odczytu;
-migracje i operacje panelu administracyjnego używają konta `admin`.
-
-Szczegóły: [frontend](frontend/README.md), [backend](backend/README.md),
-[baza danych](backend/database/README.md).
+Stos: Node.js 22, Express 4, Prisma 7, PostgreSQL 16, React 18, React Router 7, TypeScript, Vite 5, Tailwind CSS 3 i Nginx. Dokładne wersje bibliotek utrwalają trzy `package-lock.json`. Obrazy bazowe mają tagi, nie digesty. Repozytorium nie zawiera pliku licencji ustanawiającego dodatkowe warunki użycia.

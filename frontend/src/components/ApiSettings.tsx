@@ -8,6 +8,7 @@ import {
 } from '../lib/apiEndpoint';
 import { Dialog } from './Dialog';
 import { CacheBackupControls } from './CacheBackupControls';
+import { ApiSettingsAccess } from './ApiSettingsAccess';
 
 interface ApiSettingsContextValue {
   endpoint: string;
@@ -71,56 +72,58 @@ export function ApiSettingsProvider({ children }: { children: ReactNode }): JSX.
     <ApiSettingsContext.Provider value={{ endpoint, open, openSettings }}>
       {children}
       <Dialog id="api-settings" title="Ustawienia API" open={open} onClose={() => setOpen(false)}>
-        <form
-          className="api-settings-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            try {
-              applyEndpoint(validateApiEndpoint(draft));
-            } catch (cause) {
-              setError(cause instanceof Error ? cause.message : 'Nieprawidłowy adres API.');
-            }
-          }}
-        >
-          <label htmlFor={inputId}>Endpoint danych sali</label>
-          <input
-            id={inputId}
-            type="text"
-            inputMode="url"
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            value={draft}
-            onChange={(event) => {
-              setDraft(event.target.value);
-              setError(null);
+        <ApiSettingsAccess>
+          <form
+            className="api-settings-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              try {
+                applyEndpoint(validateApiEndpoint(draft));
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : 'Nieprawidłowy adres API.');
+              }
             }}
-            placeholder="https://serwer.example/api/room/{roomId}"
-            aria-describedby={`${inputId}-hint${error ? ` ${inputId}-error` : ''}`}
-            aria-invalid={Boolean(error)}
-            required
-          />
-          <p id={`${inputId}-hint`} className="api-settings-hint">
-            Wpisz pełny adres endpointu zwracającego JSON. Znacznik <code>{'{roomId}'}</code>
-            {' '}zastępujemy numerem sali z adresu strony. Zmiana zadziała od razu i zostanie
-            zapamiętana w tej przeglądarce.
-            {' '}Domyślny adres korzysta z lokalnej kopii planu. Własny adres jest odpytywany bezpośrednio.
-          </p>
-          {error && (
-            <p id={`${inputId}-error`} className="api-settings-error" role="alert">{error}</p>
-          )}
-          <div className="api-settings-actions">
-            <button type="submit" className="button button--primary">Zapisz</button>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => applyEndpoint(defaultApiEndpoint)}
-            >
-              Przywróć domyślne
-            </button>
-          </div>
-        </form>
-        <CacheBackupControls />
+          >
+            <label htmlFor={inputId}>Endpoint danych sali</label>
+            <input
+              id={inputId}
+              type="text"
+              inputMode="url"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={draft}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                setError(null);
+              }}
+              placeholder="https://serwer.example/api/room/{roomId}"
+              aria-describedby={`${inputId}-hint${error ? ` ${inputId}-error` : ''}`}
+              aria-invalid={Boolean(error)}
+              required
+            />
+            <p id={`${inputId}-hint`} className="api-settings-hint">
+              Wpisz pełny adres endpointu zwracającego JSON. Znacznik <code>{'{roomId}'}</code>
+              {' '}zastępujemy numerem sali z adresu strony. Zmiana zadziała od razu i zostanie
+              zapamiętana w tej przeglądarce.
+              {' '}Domyślny adres korzysta z lokalnej kopii planu. Własny adres jest odpytywany bezpośrednio.
+            </p>
+            {error && (
+              <p id={`${inputId}-error`} className="api-settings-error" role="alert">{error}</p>
+            )}
+            <div className="api-settings-actions">
+              <button type="submit" className="button button--primary">Zapisz</button>
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => applyEndpoint(defaultApiEndpoint)}
+              >
+                Przywróć domyślne
+              </button>
+            </div>
+          </form>
+          <CacheBackupControls />
+        </ApiSettingsAccess>
       </Dialog>
     </ApiSettingsContext.Provider>
   );

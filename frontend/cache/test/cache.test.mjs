@@ -80,6 +80,60 @@ async function setup(t, options = {}) {
   };
 }
 
+test('API settings unlock checks the server password, works offline and never returns the secret', async (t) => {
+  const f = await setup(t, { settingsPassword: 'separate-settings-password' });
+  await f.stopUpstream();
+  const unlock = (password) => f.request('/api/cache/settings/unlock', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password })
+  });
+  // The backup token does not unlock settings when a separate password is configured.
+  assert.equal((await unlock('test-admin-token')).status, 401);
+  const rejected = await unlock('wrong-password');
+  assert.equal(rejected.status, 401);
+  assert.equal((await rejected.json()).message, 'Nieprawidłowe hasło.');
+  const accepted = await unlock('separate-settings-password');
+  assert.equal(accepted.status, 200);
+  assert.equal(accepted.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await accepted.json(), { authenticated: true });
+  assert.equal(f.requests, 0);
+  assert.equal((await f.request('/api/cache/backup')).status, 401);
+  assert.equal((await f.request('/api/cache/backup', {
+    headers: { Authorization: 'Bearer separate-settings-password' }
+  })).status, 401);
+});
+
+test('API settings use the existing backup token as fallback and stay locked without configuration', async (t) => {
+  const f = await setup(t);
+  const init = { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: 'test-admin-token' }) };
+  const accepted = await f.request('/api/cache/settings/unlock', init);
+  assert.equal(accepted.status, 200);
+  const unconfigured = await setup(t, { adminToken: undefined });
+  assert.equal((await unconfigured.request('/api/cache/settings/unlock', init)).status, 503);
+});
+
+test('API settings validate login bodies and temporarily block repeated wrong passwords', async (t) => {
+  const f = await setup(t);
+  const post = (body, contentType = 'application/json') => f.request('/api/cache/settings/unlock', {
+    method: 'POST', headers: { 'Content-Type': contentType }, body
+  });
+  assert.equal((await post('{}', 'text/plain')).status, 415);
+  for (const body of ['{broken', '{}', '{"password":null}', '{"password":123}', '{"password":""}']) {
+    assert.equal((await post(body)).status, 400, body);
+  }
+  assert.equal((await post(JSON.stringify({ password: 'x'.repeat(5000) }))).status, 413);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    assert.equal((await post('{"password":"wrong"}')).status, 401);
+  }
+  const locked = await post('{"password":"test-admin-token"}');
+  assert.equal(locked.status, 429);
+  assert.equal(locked.headers.get('retry-after'), '30');
+  f.advance(30_000);
+  assert.equal((await post('{"password":"test-admin-token"}')).status, 200);
+  // Unlocking does not depend on or prevent the public room display.
+  assert.equal((await f.request()).status, 200);
+});
+
 test('a successful plan is saved as JSON and fresh reads do not hit the main server', async (t) => {
   const f = await setup(t);
   const first = await f.request();

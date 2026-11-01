@@ -1,163 +1,118 @@
-# Backend
+# Backend — instalacja i utrzymanie
 
-Ten katalog jest samodzielnym pakietem wdrożeniowym. Nie potrzebuje plików
-z `frontend/`. Zawiera API Express / TypeScript, Prisma i konfigurację PostgreSQL.
+Samodzielny pakiet obejmuje API Express/TypeScript, Prisma i PostgreSQL. Obsługuje publiczny odczyt planów oraz operacje administratora. Lokalny cache JSON należy do frontendu.
 
-## Uruchomienie na serwerze backendu
+Dokumentacja: [API](docs/API.md), [pliki i funkcje](docs/KOD.md), [baza danych](database/README.md), [testy](../docs/WERYFIKACJA.md), [cały projekt](../README.md). Linki nadrzędne wymagają pełnego repozytorium; samodzielne wdrożenie ich nie potrzebuje.
 
-Wymagane: Docker z Buildx/BuildKit i Docker Compose.
+## Wdrożenie przez Docker
 
-```bash
-cp .env.example .env
-```
-
-Ustaw w `.env` własny `ADMIN_TOKEN`, adres frontendu w `CORS_ORIGIN`
-(np. `http://192.168.1.10:5173`) i opcjonalnie `BACKEND_PORT` oraz `APP_TIMEZONE`.
-
-```bash
-docker compose up -d --build --wait
-```
-
-Katalog działa samodzielnie po skopiowaniu na serwer. Compose buduje API
-z bieżącego katalogu, uruchamia PostgreSQL i montuje skrypty inicjalizacyjne
-z `database/init/`. Docker instaluje zależności przez `npm ci` i generuje klienta
-Prisma z dołączonego schematu. `node_modules`, `dist`, `.env` i `.git` z hosta
-są wykluczone z obrazu.
-
-API jest dostępne na porcie `3001` (lub `BACKEND_PORT`), pod `/api`.
-Przykładowe sprawdzenie: `http://ADRES_BACKENDU:3001/api/health`.
-Frontend łączy się z tym serwerem przez własne ustawienie `BACKEND_URL`.
-
-## Dane sali w JSON
-
-Publiczny endpoint `GET /api/room/:id` odczytuje salę i jej zajęcia z PostgreSQL.
-`:id` oznacza numer/kod sali, np. `205`, zgodnie z polem `roomCode` w bazie;
-nie jest to wewnętrzny identyfikator rekordu bazy.
-
-```text
-GET /api/room/205                  — dzisiejszy plan w APP_TIMEZONE
-GET /api/room/205?date=2026-10-18  — plan wybranego dnia
-```
-
-Przykładowa odpowiedź (wartości pochodzą z rekordów danej sali):
-
-```json
-{
-  "room": {
-    "roomId": "205",
-    "name": "Sala komputerowa 205",
-    "building": "Budynek A",
-    "floor": "II piętro"
-  },
-  "date": "2026-10-18",
-  "generatedAt": "2026-10-18T12:00:00.000Z",
-  "currentLecture": null,
-  "nextLecture": null,
-  "schedule": [
-    {
-      "id": "lec-42",
-      "title": "Bazy danych",
-      "room": "205",
-      "date": "2026-10-18",
-      "subject": "Bazy danych",
-      "subjectCode": "INF-BD",
-      "lecturer": "Jan Kowalski",
-      "group": "INF-2A",
-      "type": "Laboratorium",
-      "startTime": "08:00",
-      "endTime": "09:30",
-      "description": "Zapytania SQL",
-      "fieldOfStudy": "Informatyka",
-      "status": "finished",
-      "isCurrent": false
-    }
-  ]
-}
-```
-
-Lista `schedule` zawiera wyłącznie wpisy tej sali z wybranego dnia, posortowane
-według godziny rozpoczęcia. `currentLecture` wskazuje trwające zajęcia,
-a `nextLecture` najbliższe nadchodzące; przy braku odpowiednich zajęć mają
-wartość `null`. Zajęcia z przeszłych dni są zakończone, a z przyszłych — nadchodzące.
-
-Istniejąca sala bez zajęć zwraca `200` i `schedule: []`. Nieistniejąca sala
-zwraca `404` z kodem `ROOM_NOT_FOUND`. Nieprawidłowa data zwraca `400`
-z kodem `INVALID_DATE`. Odpowiedzi mają format JSON i nagłówek
-`Cache-Control: no-store`, aby kolejne odczyty pobierały aktualny stan planu.
-
-PostgreSQL jest dostępny tylko dla backendu w prywatnej sieci Dockera.
-Dane są przechowywane w wolumenie `tablet_app_backend_postgres-data`.
-Konta bazy i ich dotychczasowe hasła pozostają takie jak przed podziałem projektu.
-
-## Zachowanie istniejących danych
-
-Domyślny wolumen tego pakietu to `tablet_app_backend_postgres-data`. Główny
-Compose zachowuje dotychczasowy `tablet_app_web_postgres-data`.
-Jeśli przenosisz uruchomienie ze wspólnego Compose na sam backend **na tym samym
-serwerze**, zatrzymaj poprzednie API i PostgreSQL, a w `.env` backendu ustaw:
+Wymagany Docker z BuildKit i Compose v2 obsługujący `--wait`. W katalogu `backend/` utwórz `.env` z `.env.example` (Bash: `cp .env.example .env`, PowerShell: `Copy-Item .env.example .env`). Nie nadpisuj istniejących ustawień. Wpisz np.:
 
 ```dotenv
-POSTGRES_VOLUME=tablet_app_web_postgres-data
-POSTGRES_VOLUME_EXTERNAL=true
+BACKEND_PORT=3001
+ADMIN_TOKEN=wstaw-wlasny-dlugi-token
+APP_TIMEZONE=Europe/Warsaw
+CORS_ORIGIN=http://192.168.1.10:5173
 ```
 
-Następnie uruchom `docker compose up -d --build --wait` z katalogu backendu.
-PostgreSQL użyje istniejącego wolumenu, a migracje Prisma nie odtworzą danych.
-`POSTGRES_VOLUME_EXTERNAL=true` wymaga istnienia wskazanego wolumenu; błędna
-nazwa zatrzyma wdrożenie zamiast utworzyć pustą bazę. Nie uruchamiaj równocześnie
-dwóch instancji PostgreSQL na tym samym wolumenie.
-
-Jeżeli korzystasz z własnej nazwy projektu Compose, sprawdź rzeczywistą nazwę
-wolumenu przez `docker volume ls` i wpisz ją jako `POSTGRES_VOLUME`.
-Przy zmianie serwera przenieś dane przez kopię `pg_dump` / `pg_restore`;
-szczegółowe polecenia znajdują się w głównym README.
-
-`docker compose down` zachowuje dane. Nie używaj `down -v` do zwykłego
-zatrzymania aplikacji. Seed jest opcjonalny i nie wykonuje się automatycznie.
-
-Migracje Prisma wykonują się automatycznie podczas startu backendu. Opcjonalny
-seed dla nowej bazy:
-
 ```bash
-docker compose exec -T backend npm run db:seed
+docker compose config --quiet
+docker compose up -d --build --wait
+docker compose ps
+curl --fail http://localhost:3001/api/health
 ```
 
-Seed usuwa istniejące dane i tworzy zestaw demonstracyjny. Instrukcja przeniesienia
-istniejącej bazy znajduje się w głównym README projektu.
+PowerShell: użyj `curl.exe`. Poprawna odpowiedź: `{"status":"ok","service":"room-tablet-backend","database":"ok","timestamp":"..."}`. Health sprawdza `SELECT 1`, nie kompletność danych aplikacji.
 
-Logi i zatrzymanie:
+Obraz `node:22-alpine` instaluje OpenSSL, zależności przez `npm ci`, generuje klienta Prisma i kompiluje `src/` do `dist/`. Przy każdym starcie wykonuje `npm run db:migrate`, potem `npm start`. Nieudana migracja zatrzymuje start API; `restart: unless-stopped` może ponawiać start.
+
+API czeka na zdrową bazę i przed nasłuchem sprawdza `SELECT 1`. Healthcheck API: co 10 s, timeout 3 s, 5 prób, okres startowy 20 s. PostgreSQL: co 10 s, timeout 5 s, 5 prób, okres startowy 10 s. Status `unhealthy` sam nie restartuje kontenera.
+
+Nowa baza jest pusta. Opcjonalnie `docker compose exec -T backend npm run db:seed` tworzy demo, **usuwając dotychczasowe dane aplikacji**. Przygotowanie pustej instalacji bez seeda: [baza](database/README.md).
+
+## Konfiguracja
+
+`src/config/env.ts` odczytuje środowisko procesu. Compose używa `.env` do podstawień; `node dist/index.js` i `tsx watch src/index.ts` same nie ładują tego pliku. Prisma CLI ma osobne `import 'dotenv/config'` w `prisma.config.ts`.
+
+| Zmienna | Domyślnie w kodzie Node | Znaczenie |
+| --- | --- | --- |
+| `PORT` | 3001 | Port API, w Compose 3001 |
+| `DATABASE_URL` | `postgresql://web_app:web_app_password@localhost:5432/tablet_schedule` | Publiczny odczyt |
+| `DATABASE_ADMIN_URL` | `postgresql://admin:admin_password@localhost:5432/tablet_schedule` | Osobne połączenie administratora, seeda i migracji |
+| `ADMIN_TOKEN` | `change-me-admin-token` | Wspólny sekret administratora |
+| `APP_TIMEZONE` | `Europe/Warsaw` | Data „dzisiaj” i statusy zajęć |
+| `CORS_ORIGIN` | `*` | `*` albo lista originów rozdzielona przecinkami |
+| `BACKEND_PORT` | 3001 w Compose | Port hosta, nie port procesu |
+| `POSTGRES_VOLUME` | Nazwa projektu + `_postgres-data` | Nazwany wolumen bazy |
+| `POSTGRES_VOLUME_EXTERNAL` | `false` w Compose | `true` wymaga istniejącego wolumenu i wyłącza zarządzanie jego cyklem życia |
+
+Compose ma adresy i hasła bazy wpisane w YAML. Dopisanie `DATABASE_URL` do `.env` nie nadpisuje tych wartości. Zmiana danych wymaga spójnej konfiguracji usług i faktycznych ról PostgreSQL. `POSTGRES_PASSWORD` na istniejącym wolumenie samo nie zmienia hasła roli. Domyślne konta są ustawieniami demonstracyjnymi.
+
+`CORS_ORIGIN` to origin bez ścieżki, np. `http://192.168.1.10:5173`. Własny zewnętrzny endpoint wywoływany z przeglądarki wymaga jego dopuszczenia. CORS nie jest autoryzacją. `Number(PORT) || 3001` nie zapewnia pełnej walidacji portu. Nieprawidłowa strefa IANA powoduje błędy przy obliczaniu czasu; ustaw zgodną strefę w API i cache.
+
+## Rozwój bez Dockera
+
+Użyj aktualnego Node.js 22, **co najmniej 22.12.0 w linii 22**, zgodnie z [wymaganiami Prisma 7](https://www.prisma.io/docs/orm/v7/reference/system-requirements). Potrzebny PostgreSQL z przygotowanymi rolami i osiągalnym portem. Dostarczone Compose nie publikuje 5432; do procesu na hoście użyj osobnej bazy albo własnego override. Nazwa `database` działa w sieci Dockera.
 
 ```bash
-docker compose logs -f backend
-docker compose down
-```
-
-## Praca nad kodem bez Dockera
-
-Wymagany Node.js 22 i istniejąca baza PostgreSQL z wykonanymi migracjami.
-Ustaw zmienne `DATABASE_URL` (konto odczytu), `DATABASE_ADMIN_URL` (konto zapisu),
-`ADMIN_TOKEN`, `APP_TIMEZONE` i `CORS_ORIGIN` w środowisku procesu. Domyślny port
-to `3001`, można go zmienić zmienną `PORT`.
-
-```bash
+export DATABASE_URL=postgresql://web_app:web_app_password@localhost:5432/tablet_schedule
+export DATABASE_ADMIN_URL=postgresql://admin:admin_password@localhost:5432/tablet_schedule
+export ADMIN_TOKEN=wstaw-wlasny-token
+export APP_TIMEZONE=Europe/Warsaw
+export CORS_ORIGIN=http://localhost:5173
 npm ci
 npm run db:migrate
 npm run dev
 ```
 
-Kompilacja: `npm run build`. Start skompilowanego API: `npm start`.
-Szczegóły bazy: [database/README.md](database/README.md).
+To składnia Bash. PowerShell ustawia zmienne przez `$env:DATABASE_URL='...'`. Skrypty `db:migrate` i `prisma:migrate:deploy` zawierają podstawienie POSIX. W natywnym PowerShell/cmd ustaw adres administratora jako `DATABASE_URL`, wykonaj `npx prisma migrate deploy`, a przed startem przywróć adres odczytu. Można też użyć WSL/Git Bash.
 
-## Test integracyjny endpointu
+`DATABASE_URL` musi być dostępne już podczas `npm ci`, bo skrypt postinstall ładuje konfigurację Prisma przez `env('DATABASE_URL')`. Generowanie klienta samo nie wymaga działającego połączenia z bazą.
 
-Test uruchamia rzeczywisty backend HTTP i sprawdza odpowiedzi z PostgreSQL.
-Wymaga osobnej bazy z nazwą kończącą się na `_test` i konta z uprawnieniami
-do migracji oraz tworzenia danych testowych:
+Alternatywnie po kompilacji: `node --env-file=.env.runtime dist/index.js`, gdzie własny `.env.runtime` ma klucze z powyższej tabeli i nie jest dodawany do Git.
+
+## Polecenia npm
+
+| Skrypt | Działanie |
+| --- | --- |
+| `dev` | `tsx watch src/index.ts`, restart po zmianie kodu |
+| `build` | `tsc -p tsconfig.json`, typy i emitowanie `dist/` |
+| `start` | `node dist/index.js`, wymaga buildu, nie uruchamia migracji |
+| `db:migrate`, `prisma:migrate:deploy` | Istniejące migracje z `DATABASE_ADMIN_URL`, awaryjnie `DATABASE_URL` |
+| `prisma:migrate:dev` | Tworzenie migracji developerskiej, odpowiednie prawa i shadow database |
+| `db:seed`, `prisma:seed` | `tsx prisma/seed.ts`, zastąpienie danych demonstracyjnymi |
+| `prisma:generate` | Generowanie klienta ze schematu |
+| `postinstall` | Automatyczne `prisma generate` |
+| `test:integration` | Build i sześć testów HTTP z osobną bazą `_test` |
+
+`prisma:migrate:dev` nie podmienia adresu na `DATABASE_ADMIN_URL`; ustaw `DATABASE_URL` konta z prawami do migracji. Nowa zmiana modelu wymaga nowej migracji, generacji klienta i przebudowy. Nie zmieniaj SQL migracji już zastosowanych w bazie.
+
+## Dane sali w JSON
+
+`GET /api/room/205` zwraca dzisiejszy plan według `APP_TIMEZONE`; `GET /api/room/205?date=2026-11-01` plan wybranego dnia. `205` to `roomCode`, nie klucz liczbowy bazy. Pełny kontrakt: [API](docs/API.md#publiczny-model-planu-sali).
+
+Status liczony jest dla `[startTime, endTime)`: przeszły dzień — `finished`, przyszły — `upcoming`. Pusta istniejąca sala daje 200, nieznana 404. Backend nie dodaje metadanych `cache`.
+
+## Obsługa i diagnoza
 
 ```bash
-TEST_DATABASE_URL=postgresql://test_user:test_password@localhost:55432/tablet_room_api_test npm run test:integration
+docker compose logs --tail=100 backend database
+docker compose stop backend
+docker compose up -d backend
+docker compose down
 ```
 
-Test wykonuje migracje na tej bazie, dodaje własne rekordy i usuwa je po zakończeniu.
-Sprawdza filtr sali i dnia, kolejność zajęć, dane przedmiotu, puste harmonogramy,
-brak sali oraz błędne daty. Nie uruchamia seeda demonstracyjnego.
+`restart` zachowuje stare środowisko. Po zmianie `.env` użyj `docker compose up -d --force-recreate backend`, po zmianie kodu dodaj `--build`. `down` zachowuje bazę, `down -v` może ją usunąć. Nie uruchamiaj dwóch PostgreSQL na tym samym wolumenie. Przenoszenie danych: [baza](database/README.md).
+
+| Objaw | Co sprawdzić |
+| --- | --- |
+| API nie startuje | Log migracji, PostgreSQL, oba adresy połączeń, uprawnienia ról |
+| Health działa, sala 404 | `GET /api/rooms`; migracje nie dodają sal |
+| Demo działało wczoraj, dziś pusto | Seed tworzy konkretną datę, nie plan cykliczny |
+| Panel 401 | `ADMIN_TOKEN` backendu i wpisany token; token kopii jest niezależny |
+| CORS w przeglądarce | Dokładny origin, schemat i port |
+| Odczyt działa, zapis nie | `DATABASE_ADMIN_URL`, aktywność słowników i relacje |
+| Puste pola wyboru | Brak danych początkowych, aktywnego budynku lub piętra |
+| Usuwanie 409 | Powiązane rekordy; sprawdź zależności, dla sali jawne `cascade=true` |
+
+Jest jeden współdzielony token, bez kont użytkowników, JWT i wygasających sesji. Repo nie konfiguruje TLS, limitowania żądań ani audytu zmian. Te elementy należą do konfiguracji wdrożenia. Nieobsłużone błędy, również parsera JSON, trafiają do ogólnej odpowiedzi 500; nie zakładaj osobnego 400 dla każdego błędu wejścia.

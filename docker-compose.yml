@@ -34,6 +34,7 @@ services:
     environment:
       BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
       CACHE_ADMIN_TOKEN: ${CACHE_ADMIN_TOKEN:-${ADMIN_TOKEN:-change-me-admin-token}}
+      API_SETTINGS_PASSWORD: ${API_SETTINGS_PASSWORD:-}
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Warsaw}
       CACHE_ROOM_IDS: ${CACHE_ROOM_IDS:-${TABLET_ROOM_ID:-}}
       CACHE_REFRESH_SECONDS: ${CACHE_REFRESH_SECONDS:-60}

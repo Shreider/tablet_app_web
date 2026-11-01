@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { FileCache, keyOf, MAX_BACKUP_BYTES } from './store.mjs';
 import { RoomSchedule, localTime, validDate, validRoomId } from '../shared/roomSchedule.mjs';
@@ -47,6 +47,50 @@ export async function createCacheServer(options) {
   if ([...configuredRooms].some((roomId) => !validRoomId(roomId))) throw new Error('Nieprawidłowy CACHE_ROOM_IDS.');
   const attempts = new Map();
   const pending = new Map();
+  const settingsPassword = options.settingsPassword || options.adminToken;
+  const settingsLogin = { failures: 0, windowStart: 0, blockedUntil: 0 };
+
+  async function unlockSettings(request, response) {
+    if (!settingsPassword) {
+      throw new HttpError(503, 'Dostęp do ustawień wymaga ustawienia API_SETTINGS_PASSWORD.');
+    }
+    const timestamp = now().getTime();
+    if (timestamp < settingsLogin.blockedUntil) {
+      const retryAfter = Math.ceil((settingsLogin.blockedUntil - timestamp) / 1000);
+      return json(response, 429, { error: 'SETTINGS_LOCKED',
+        message: `Zbyt wiele błędnych prób. Spróbuj ponownie za ${retryAfter} s.` },
+      { 'Retry-After': String(retryAfter) });
+    }
+    if (settingsLogin.blockedUntil) {
+      settingsLogin.failures = 0;
+      settingsLogin.windowStart = timestamp;
+      settingsLogin.blockedUntil = 0;
+    }
+    if (!request.headers['content-type']?.includes('application/json')) {
+      throw new HttpError(415, 'Hasło należy przesłać jako JSON.');
+    }
+    let body;
+    try { body = JSON.parse(await readLimited(request, 4096)); } catch (error) {
+      if (error instanceof HttpError) throw error;
+      throw new HttpError(400, 'Nieprawidłowe dane logowania.');
+    }
+    if (!body || typeof body.password !== 'string' || !body.password || body.password.length > 1024) {
+      throw new HttpError(400, 'Wpisz hasło do ustawień API.');
+    }
+    const digest = (value) => createHash('sha256').update(value).digest();
+    if (!timingSafeEqual(digest(body.password), digest(settingsPassword))) {
+      if (timestamp - settingsLogin.windowStart >= 60_000) {
+        settingsLogin.failures = 0;
+        settingsLogin.windowStart = timestamp;
+      }
+      settingsLogin.failures++;
+      if (settingsLogin.failures >= 5) settingsLogin.blockedUntil = timestamp + 30_000;
+      throw new HttpError(401, 'Nieprawidłowe hasło.');
+    }
+    settingsLogin.failures = 0;
+    settingsLogin.blockedUntil = 0;
+    return json(response, 200, { authenticated: true });
+  }
 
   async function refresh(roomId, date) {
     const key = keyOf(roomId, date);
@@ -131,6 +175,9 @@ export async function createCacheServer(options) {
       if (url.pathname === '/healthz' && request.method === 'GET') {
         return json(response, 200, { status: 'ok', snapshots: cache.entries.size });
       }
+      if (url.pathname === '/api/cache/settings/unlock' && request.method === 'POST') {
+        return await unlockSettings(request, response);
+      }
       const match = /^\/api\/room\/([^/]+)$/.exec(url.pathname);
       if (match && request.method === 'GET') {
         const roomId = decodeURIComponent(match[1]);
@@ -213,6 +260,7 @@ export async function startCacheFromEnvironment() {
     backendUrl: process.env.BACKEND_URL,
     directory: process.env.CACHE_DIR ?? './.cache',
     adminToken: process.env.CACHE_ADMIN_TOKEN,
+    settingsPassword: process.env.API_SETTINGS_PASSWORD || process.env.CACHE_ADMIN_TOKEN,
     timeZone: process.env.APP_TIMEZONE ?? 'Europe/Warsaw',
     roomIds: (process.env.CACHE_ROOM_IDS ?? '').split(',').map((value) => value.trim()).filter(Boolean),
     refreshMs: integer(process.env.CACHE_REFRESH_SECONDS, 60, 5, 86_400) * 1000,
