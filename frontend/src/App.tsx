@@ -3,7 +3,7 @@ import { HeaderBar } from './components/HeaderBar';
 import { LectureNavigator } from './components/LectureNavigator';
 import { ScheduleSidebar } from './components/ScheduleSidebar';
 import { Icon } from './components/Icon';
-import { formatTime } from './lib/schedule';
+import { formatDay, formatTime } from './lib/schedule';
 import type { RoomScheduleResponse } from './types/schedule';
 
 interface AppProps {
@@ -18,6 +18,13 @@ export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
   const { room, schedule, currentLecture, nextLecture } = data;
   const defaultLecture = currentLecture ?? nextLecture ?? schedule[schedule.length - 1] ?? null;
   const selectedLecture = schedule.find((lecture) => lecture.id === selectedId) ?? defaultLecture;
+  const cached = Boolean(data.cache?.stale || data.cache?.outdated);
+  const notice = data.cache?.outdated
+    ? `Brak aktualnego planu. Wyświetlam zapisany plan na ${formatDay(data.date)}.`
+    : error ? `${error} Wyświetlam ostatnio pobrany plan.`
+    : data.cache?.imported ? 'Wyświetlam zaimportowaną kopię. Czekam na potwierdzenie planu z serwera.'
+    : cached ? 'Brak połączenia z serwerem. Wyświetlam lokalną kopię planu.' : null;
+  const savedAt = new Date(data.cache?.fetchedAt ?? data.generatedAt);
 
   return (
     <div className="room-shell">
@@ -28,10 +35,10 @@ export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
         onOpenSchedule={() => setScheduleOpen(true)}
       />
 
-      {error && (
+      {notice && (
         <div className="connection-notice" role="status">
           <Icon name="info" />
-          <span>{error} Wyświetlam ostatnio pobrany plan.</span>
+          <span>{notice}</span>
           <button className="text-button" type="button" onClick={onRefresh}>
             Ponów
           </button>
@@ -51,9 +58,12 @@ export default function App({ data, error, onRefresh }: AppProps): JSX.Element {
 
       <footer className="app-footer">
         <span>
-          <span className={`status-dot ${error ? 'status-dot--warning' : ''}`} />
-          {error ? 'Ostatnio pobrany plan' : 'Plan aktualny'}
-          <span className="footer-time"> · {formatTime(new Date(data.generatedAt))}</span>
+          <span className={`status-dot ${error || cached ? 'status-dot--warning' : ''}`} />
+          {error || cached ? 'Zapisana kopia planu' : 'Plan aktualny'}
+          <span className="footer-time">
+            {' · '}{savedAt.toLocaleDateString('pl-PL', { timeZone: data.cache?.timeZone ?? 'Europe/Warsaw' })}
+            {' '}{formatTime(savedAt)}
+          </span>
         </span>
         <span>
           Plan sali <span className="footer-divider">/</span> {room.building}

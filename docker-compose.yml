@@ -14,10 +14,38 @@ services:
       - "${FRONTEND_PORT:-5173}:80"
     environment:
       BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+    depends_on:
+      cache:
+        condition: service_healthy
     networks:
       - public_net
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  cache:
+    build:
+      context: ./frontend
+      dockerfile: cache/Dockerfile
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+      CACHE_ADMIN_TOKEN: ${CACHE_ADMIN_TOKEN:-${ADMIN_TOKEN:-change-me-admin-token}}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Warsaw}
+      CACHE_ROOM_IDS: ${CACHE_ROOM_IDS:-${TABLET_ROOM_ID:-}}
+      CACHE_REFRESH_SECONDS: ${CACHE_REFRESH_SECONDS:-60}
+      CACHE_TIMEOUT_SECONDS: ${CACHE_TIMEOUT_SECONDS:-5}
+    volumes:
+      - type: bind
+        source: ./frontend/cache-data
+        target: /data
+    networks:
+      - public_net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 5

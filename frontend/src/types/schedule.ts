@@ -33,4 +33,12 @@ export interface RoomScheduleResponse {
   currentLecture: LectureEvent | null;
   nextLecture: LectureEvent | null;
   schedule: LectureEvent[];
+  cache?: {
+    fetchedAt: string;
+    timeZone: string;
+    requestedDate: string;
+    stale: boolean;
+    outdated: boolean;
+    imported: boolean;
+  };
 }

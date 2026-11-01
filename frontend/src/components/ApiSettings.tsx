@@ -7,6 +7,7 @@ import {
   validateApiEndpoint
 } from '../lib/apiEndpoint';
 import { Dialog } from './Dialog';
+import { CacheBackupControls } from './CacheBackupControls';
 
 interface ApiSettingsContextValue {
   endpoint: string;
@@ -103,6 +104,7 @@ export function ApiSettingsProvider({ children }: { children: ReactNode }): JSX.
             Wpisz pełny adres endpointu zwracającego JSON. Znacznik <code>{'{roomId}'}</code>
             {' '}zastępujemy numerem sali z adresu strony. Zmiana zadziała od razu i zostanie
             zapamiętana w tej przeglądarce.
+            {' '}Domyślny adres korzysta z lokalnej kopii planu. Własny adres jest odpytywany bezpośrednio.
           </p>
           {error && (
             <p id={`${inputId}-error`} className="api-settings-error" role="alert">{error}</p>
@@ -118,6 +120,7 @@ export function ApiSettingsProvider({ children }: { children: ReactNode }): JSX.
             </button>
           </div>
         </form>
+        <CacheBackupControls />
       </Dialog>
     </ApiSettingsContext.Provider>
   );

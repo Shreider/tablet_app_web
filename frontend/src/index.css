@@ -603,6 +603,14 @@ p {
   gap: 10px;
   margin-top: 4px;
 }
+.cache-backup {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.api-settings-actions .button:disabled {
+  opacity: 0.5;
+}
 
 .schedule-list {
   display: flex;

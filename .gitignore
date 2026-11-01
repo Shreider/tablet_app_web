@@ -5,3 +5,7 @@
 !.env.example
 .DS_Store
 .codex
+frontend/.cache/
+frontend/cache-data/*
+!frontend/cache-data/.gitkeep
+/docker-compose.override.yml

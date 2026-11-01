@@ -3,7 +3,7 @@
 Projekt jest podzielony na dwie niezależnie wdrażane aplikacje:
 
 - `frontend/` — widok sal i panel administratora, budowane do plików statycznych
-  i udostępniane przez jeden serwer Nginx;
+  i udostępniane przez jeden serwer Nginx, oraz mała usługa cache zapisująca plany do JSON;
 - `backend/` — API Node.js / Express, Prisma i PostgreSQL.
 
 Każdy katalog ma własny `Dockerfile`, `docker-compose.yml`, `.env.example`
@@ -61,6 +61,7 @@ Ustaw adres serwera backendu osiągalny **z serwera frontendu**:
 BACKEND_URL=http://192.168.1.20:3001
 FRONTEND_PORT=5173
 TABLET_ROOM_ID=205
+CACHE_ADMIN_TOKEN=wstaw-wlasny-dlugi-token-kopii
 ```
 
 `BACKEND_URL` musi zawierać `http://` lub `https://`, bez końcowego `/`
@@ -81,9 +82,13 @@ potrzebny przy wdrożeniu. Logowanie używa `ADMIN_TOKEN` ustawionego w backendz
 
 ## Komunikacja między aplikacjami
 
-Przeglądarka łączy się z frontendem. Nginx przekazuje żądania `/api` do
-`BACKEND_URL`, zachowując ścieżkę, parametry i nagłówek autoryzacji.
-Adres backendu nie jest wbudowany w kod JavaScript.
+Przeglądarka łączy się z frontendem. Nginx przekazuje `/api/room/:roomId`
+do lokalnej usługi cache. Usługa pobiera plan z `BACKEND_URL`, sprawdza jego
+format i zapisuje ostatnią poprawną odpowiedź w pliku JSON w `frontend/cache-data/`.
+Plan jest odświeżany co 60 sekund, również dla poznanych sal bez otwartej strony.
+Przy awarii głównego serwera dostępna jest zapisana kopia wraz z czasem pobrania.
+Adres backendu nie jest wbudowany w kod JavaScript. Pozostałe żądania API,
+w tym panel administratora, są przekazywane bezpośrednio do `BACKEND_URL`.
 
 Serwer frontendu musi mieć dostęp do portu API backendu (domyślnie `3001`).
 PostgreSQL nie publikuje portu na hosta i działa w prywatnej sieci backendu.
@@ -92,7 +97,7 @@ Frontend może uruchomić się także wtedy, gdy API jest chwilowo niedostępne.
 Po zmianie adresu backendu wystarczy odtworzyć kontener frontendu:
 
 ```bash
-docker compose up -d --force-recreate frontend
+docker compose up -d --force-recreate frontend cache
 ```
 
 `TABLET_ROOM_ID` jest ustawiany podczas budowania obrazu. Po jego zmianie użyj:
@@ -105,6 +110,24 @@ Numer w `/room/:roomId` ma pierwszeństwo przed domyślną salą. Dla jednego se
 obsługującego wiele tabletów pozostaw `TABLET_ROOM_ID` puste i przypisz każdemu
 tabletowi stały adres, np. `/room/30` lub `/room/205`. Sam `/` bez domyślnej sali
 wyświetla informację o braku konfiguracji.
+
+### Lokalna kopia planów
+
+W oknie **API** widoku sali są przyciski **Pobierz kopię** i **Wczytaj kopię**.
+W trybie lokalnym tokenem kopii jest domyślnie `ADMIN_TOKEN`; na osobnym serwerze
+frontendu ustaw `CACHE_ADMIN_TOKEN`. Eksport i import obejmują tylko zapisane plany,
+bez haseł i pełnej bazy danych. Kopię można wczytać przy niedostępnym głównym serwerze.
+Plik musi pochodzić z tego samego `BACKEND_URL`; błędny plik nie zastępuje zapisanych danych.
+
+Katalog `frontend/cache-data/` na komputerze zachowuje dane po odtworzeniu kontenerów.
+Oba warianty Compose podpinają go do `/data` w usłudze cache. Ścieżki są względne,
+więc ten sam projekt działa na Linuksie i przez Docker Desktop na Windowsie.
+Przykładowo, przy projekcie w `C:\tablet_app_web` plik będzie w
+`C:\tablet_app_web\frontend\cache-data\plans-<identyfikator-serwera>.json`.
+Katalog danych jest pomijany przez Git i przy budowaniu obrazów.
+Zmiana `BACKEND_URL` wybiera osobny plik cache, aby nie mieszać danych różnych serwerów.
+Zapisany wczorajszy plan jest wyraźnie oznaczony; statusy zajęć są obliczane na bieżąco.
+Szczegóły konfiguracji, API kopii i testów są w [instrukcji frontendu](frontend/README.md#lokalny-cache-json).
 
 ## Uruchomienie lokalne całego projektu
 
