@@ -1,5 +1,7 @@
 # Stanowisko
 
+Szczegółowe omówienie kodu w formie wykładów profesora: [dokumentacja projektu](docs/README.md) lub [pełny przewodnik HTML](docs/PRZEWODNIK.html). Obejmuje architekturę, dane, polityki, PIN, WebView, instalację, alternatywy i diagnostykę.
+
 Aplikacja Android do zarządzania pulpitem, dozwolonymi aplikacjami i ochroną urządzenia. Obsługuje Androida 14 i nowszego oraz interfejsy telefonów i tabletów. Cały interfejs jest po polsku.
 
 Administrator wybiera aplikacje, ich uprawnienia i tryb działania: **Tryb wielu aplikacji** albo **Sesja jednej aplikacji**. Wbudowana strona internetowa obsługuje HTTP i HTTPS oraz te same tryby. Pływające menu zapewnia dostęp do pulpitu i panelu administratora. Ustawienia obejmują niewygaszanie ekranu i ukrywanie pasków systemowych; pulpit pokazuje datę, godzinę i baterię.
